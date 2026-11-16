@@ -1,0 +1,203 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'dashboard' %}
+{% block title %}Command Center{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Command Center</h1>
+    <p>Platform overview — what needs your attention right now.</p>
+</div>
+
+<!-- Key Stats -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #dbeafe;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_faculty }}</div>
+            <div class="stat-label">Total Faculty</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #d1fae5;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value" style="color: #059669;">{{ stats.active_faculty }}</div>
+            <div class="stat-label">Active Faculty</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fef3c7;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value" style="color: #d97706;">{{ stats.unresolved_threats }}</div>
+            <div class="stat-label">Active Threats</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #ede9fe;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value" style="color: #7c3aed;">{{ stats.pending_migrations }}</div>
+            <div class="stat-label">Pending Migrations</div>
+        </div>
+    </div>
+</div>
+
+<!-- Needs Attention + Security Alerts -->
+<div class="grid-2-1" style="margin-bottom: 1.5rem;">
+    <!-- Needs Attention -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Needs Attention</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            {% set attention_items = [] %}
+            {% if stats.pending_migrations > 0 %}
+            <div class="activity-item">
+                <div class="activity-dot" style="background: #d97706;"></div>
+                <div class="activity-content">
+                    <div class="activity-action">{{ stats.pending_migrations }} pending migration request{{ 's' if stats.pending_migrations != 1 }}</div>
+                    <div class="activity-time"><a href="{{ url_for('platform_data_migration', tab='migrations') }}" style="color: #2563eb;">Review now →</a></div>
+                </div>
+            </div>
+            {% endif %}
+            {% if stats.unresolved_threats > 0 %}
+            <div class="activity-item">
+                <div class="activity-dot" style="background: #dc2626;"></div>
+                <div class="activity-content">
+                    <div class="activity-action">{{ stats.unresolved_threats }} unresolved threat{{ 's' if stats.unresolved_threats != 1 }}</div>
+                    <div class="activity-time"><a href="{{ url_for('platform_security') }}" style="color: #2563eb;">Review security →</a></div>
+                </div>
+            </div>
+            {% endif %}
+            {% if stats.inactive_faculty > 0 %}
+            <div class="activity-item">
+                <div class="activity-dot" style="background: #9ca3af;"></div>
+                <div class="activity-content">
+                    <div class="activity-action">{{ stats.inactive_faculty }} inactive account{{ 's' if stats.inactive_faculty != 1 }}</div>
+                    <div class="activity-time"><a href="{{ url_for('platform_faculty_list', status='inactive') }}" style="color: #2563eb;">Review →</a></div>
+                </div>
+            </div>
+            {% endif %}
+            {% if not attention_items and stats.pending_migrations == 0 and stats.unresolved_threats == 0 %}
+            <div class="activity-item">
+                <div class="activity-dot" style="background: #10b981;"></div>
+                <div class="activity-content">
+                    <div class="activity-action" style="color: #059669;">All clear — no urgent items</div>
+                    <div class="activity-time">Platform is running normally</div>
+                </div>
+            </div>
+            {% endif %}
+            {% for a in activity[:5] %}
+            <div class="activity-item">
+                <div class="activity-dot" style="background: {% if 'login' in a.action %}#059669{% elif 'fail' in a.action or 'threat' in a.action %}#dc2626{% elif 'delete' in a.action %}#d97706{% else %}#6b7280{% endif %};"></div>
+                <div class="activity-content">
+                    <span class="activity-action">{{ a.action|replace('_', ' ')|title }}</span>
+                    {% if a.details %}<span class="activity-details"> — {{ a.details[:80] }}</span>{% endif %}
+                    <div class="activity-time">{{ a.timestamp[:16] if a.timestamp else '' }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Security Alerts -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Security Status</h3>
+            {% if stats.unresolved_threats > 0 %}
+            <span class="badge badge-danger">{{ stats.unresolved_threats }} active</span>
+            {% else %}
+            <span class="badge badge-success">Clear</span>
+            {% endif %}
+        </div>
+        <div class="card-body" style="padding: 0;">
+            {% if threats %}
+            {% for t in threats[:5] %}
+            <div style="padding: 0.75rem 1.25rem; border-bottom: 1px solid #f0f1f3;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.82rem; color: #dc2626;">{{ t.threat_type }}</div>
+                        <div style="font-size: 0.78rem; color: #6b7280; margin-top: 0.1rem;">{{ t.description[:60] }}{% if t.description|length > 60 %}...{% endif %}</div>
+                        <div style="font-size: 0.72rem; color: #9ca3af; margin-top: 0.1rem;">{{ t.ip_address }} · {{ t.detected_at[:16] if t.detected_at else '' }}</div>
+                    </div>
+                    <span class="badge badge-{% if t.severity == 'critical' %}danger{% elif t.severity == 'high' %}warning{% elif t.severity == 'medium' %}info{% else %}neutral{% endif %}">{{ t.severity }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            {% if threats|length > 5 %}
+            <div style="padding: 0.75rem 1.25rem; text-align: center;">
+                <a href="{{ url_for('platform_security') }}" style="color: #2563eb; font-size: 0.82rem; font-weight: 500;">View all threats →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-state" style="padding: 2rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <p>No active threats detected</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links + Recent Exports -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header">
+            <h3>Quick Actions</h3>
+        </div>
+        <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <a href="{{ url_for('platform_faculty_list') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                Faculty Operations
+            </a>
+            <a href="{{ url_for('platform_websites') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                Public Websites
+            </a>
+            <a href="{{ url_for('platform_security') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Security Center
+            </a>
+            <a href="{{ url_for('platform_data_migration') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Data &amp; Migration
+            </a>
+            <a href="{{ url_for('platform_analytics') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                Analytics
+            </a>
+            <a href="{{ url_for('platform_health') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                System Health
+            </a>
+            <a href="{{ url_for('platform_backups') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>
+                Backups
+            </a>
+            <a href="{{ url_for('platform_admins') }}" class="btn btn-ghost" style="justify-content: flex-start;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                Admins &amp; Roles
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Platform Summary</h3>
+        </div>
+        <div class="card-body" style="padding: 0.5rem 1.25rem;">
+            <div class="detail-row"><span class="label">Publications</span><span class="value">{{ stats.total_publications }}</span></div>
+            <div class="detail-row"><span class="label">Messages</span><span class="value">{{ stats.total_messages }}</span></div>
+            <div class="detail-row"><span class="label">Today's Logins</span><span class="value">{{ stats.today_logins }}</span></div>
+            <div class="detail-row"><span class="label">Pending Migrations</span><span class="value">{{ stats.pending_migrations }}</span></div>
+            <div class="detail-row"><span class="label">Unresolved Threats</span><span class="value">{{ stats.unresolved_threats }}</span></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar"><div class="container"><a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a><ul class="navbar-nav"><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div></nav>
+    <div class="dashboard-layout">
+        {% set active_page = 'messages' %}
+        {% include 'faculty/_sidebar.html' %}
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Messages from Students</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Messages sent to you through your public profile contact form.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            {% if messages %}
+            {% for m in messages %}
+            <div class="card" style="margin-bottom: 1rem; {% if not m.is_read %}border-left: 4px solid #3182ce;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <div>
+                        <strong style="font-size: 1rem;">{{ m.sender_name }}</strong>
+                        <span style="color: #718096; font-size: 0.85rem; margin-left: 0.5rem;">{{ m.sender_email }}</span>
+                        {% if not m.is_read %}
+                        <span style="background: #3182ce; color: white; padding: 0.15rem 0.4rem; border-radius: 10px; font-size: 0.65rem; margin-left: 0.5rem;">NEW</span>
+                        {% endif %}
+                    </div>
+                    <span style="font-size: 0.8rem; color: #a0aec0;">{{ m.created_at }}</span>
+                </div>
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">Subject: {{ m.subject or '(no subject)' }}</div>
+                <p style="color: #4a5568; font-size: 0.9rem; white-space: pre-wrap;">{{ m.message }}</p>
+                {% if not m.is_read %}
+                <a href="{{ url_for('view_messages', read=m.id) }}" class="btn btn-sm btn-outline" style="margin-top: 0.5rem;">Mark as Read</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state"><h3>No messages yet</h3><p>Messages from students will appear here when they contact you through your public profile.</p></div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

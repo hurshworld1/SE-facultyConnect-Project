@@ -1,0 +1,73 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'websites' %}
+{% block title %}Public Websites{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Public Websites</h1>
+    <p>Monitor and manage all faculty public-facing websites.</p>
+</div>
+
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 0.75rem 1.25rem;">
+        <form method="GET" class="filter-bar" style="margin: 0;">
+            <input type="text" name="q" class="form-control" placeholder="Search faculty..." value="{{ search }}">
+            <select name="filter" class="form-control">
+                <option value="">All Websites</option>
+                <option value="incomplete" {{ 'selected' if filter_type == 'incomplete' }}>Incomplete Profiles</option>
+                <option value="no_photo" {{ 'selected' if filter_type == 'no_photo' }}>No Photo</option>
+                <option value="detached" {{ 'selected' if filter_type == 'detached' }}>Detached</option>
+                <option value="inactive" {{ 'selected' if filter_type == 'inactive' }}>Inactive</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Faculty</th><th>Department</th><th>Profile Status</th><th>Content</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for w in websites %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            {% if w.photo %}
+                            <img src="{{ url_for('uploaded_file', filename='photos/' + w.photo) }}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; color: #6b7280;">{{ w.full_name[0] }}</div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: 600;">{{ w.full_name }}</div>
+                                <div style="font-size: 0.72rem; color: #9ca3af;">@{{ w.username }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="font-size: 0.82rem;">{{ w.department or '-' }}</td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if w.bio else 'warning' }}">{{ 'Complete' if w.bio else 'Incomplete' }}</span>
+                    </td>
+                    <td style="font-size: 0.82rem; color: #6b7280;">
+                        {{ w.pub_count }} pubs · {{ w.course_count }} courses · {{ w.qual_count }} quals
+                    </td>
+                    <td>
+                        <span class="badge badge-{{ 'success' if w.is_active else 'danger' }}">{{ 'Active' if w.is_active else 'Inactive' }}</span>
+                        {% if w.is_detached %}<span class="badge badge-purple">Detached</span>{% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('public_profile', username=w.username) }}" target="_blank" class="btn btn-primary btn-xs">View Site</a>
+                        <a href="{{ url_for('platform_user_detail', fid=w.id) }}" class="btn btn-ghost btn-xs">Admin</a>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not websites %}
+                <tr><td colspan="6"><div class="empty-state"><h3>No websites found</h3></div></td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'settings' %}
+{% block title %}Platform Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Platform Settings</h1>
+    <p>Configure platform behavior and policies.</p>
+</div>
+
+<form method="POST" action="{{ url_for('platform_settings') }}">
+    <!-- General -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header"><h3>General</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Platform Name</label>
+                    <input type="text" name="platform_name" class="form-control" value="{{ settings.get('platform_name', 'FacultyConnect') }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header"><h3>Faculty Registration</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Registration Enabled</label>
+                    <select name="registration_enabled" class="form-control">
+                        <option value="yes" {{ 'selected' if settings.get('registration_enabled', 'yes') == 'yes' }}>Yes — Faculty can register</option>
+                        <option value="no" {{ 'selected' if settings.get('registration_enabled', 'yes') == 'no' }}>No — Registration disabled</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Require Approval</label>
+                    <select name="require_approval" class="form-control">
+                        <option value="no" {{ 'selected' if settings.get('require_approval', 'no') == 'no' }}>No — Auto-approve</option>
+                        <option value="yes" {{ 'selected' if settings.get('require_approval', 'no') == 'yes' }}>Yes — Admin must approve</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Management -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header"><h3>File Management</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Max Upload Size (MB)</label>
+                    <input type="number" name="max_upload_size" class="form-control" value="{{ settings.get('max_upload_size', '100') }}" min="1" max="500">
+                </div>
+                <div class="form-group">
+                    <label>Default Profile Visibility</label>
+                    <select name="default_visibility" class="form-control">
+                        <option value="published" {{ 'selected' if settings.get('default_visibility', 'published') == 'published' }}>Published</option>
+                        <option value="draft" {{ 'selected' if settings.get('default_visibility', 'published') == 'draft' }}>Draft (private)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header"><h3>Security</h3></div>
+        <div class="card-body">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Session Timeout (hours)</label>
+                    <input type="number" name="session_timeout" class="form-control" value="{{ settings.get('session_timeout', '4') }}" min="1" max="48">
+                </div>
+                <div class="form-group">
+                    <label>Min Password Length</label>
+                    <input type="number" name="password_min_length" class="form-control" value="{{ settings.get('password_min_length', '6') }}" min="4" max="20">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header"><h3>Maintenance</h3></div>
+        <div class="card-body">
+            <div class="form-group">
+                <label>Maintenance Mode</label>
+                <select name="maintenance_mode" class="form-control" style="max-width: 300px;">
+                    <option value="off" {{ 'selected' if settings.get('maintenance_mode', 'off') == 'off' }}>Off — Platform is live</option>
+                    <option value="on" {{ 'selected' if settings.get('maintenance_mode', 'off') == 'on' }}>On — Platform is in maintenance mode</option>
+                </select>
+                <small style="color: #6b7280; font-size: 0.78rem;">When enabled, only admins can access the platform.</small>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Settings</button>
+</form>
+{% endblock %}

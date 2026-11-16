@@ -1,0 +1,112 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'admins' %}
+{% block title %}Admins & Roles{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Admins &amp; Roles</h1>
+    <p>Manage administrator accounts and access levels.</p>
+</div>
+
+<!-- Add Admin Form -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header"><h3>Add Administrator</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('platform_add_admin') }}" class="form-row">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" name="username" class="form-control" placeholder="newadmin" required minlength="3">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" name="password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label>Role</label>
+                <select name="role" class="form-control">
+                    <option value="super_admin">Super Admin (full access)</option>
+                    <option value="platform_admin">Platform Admin (manage faculty)</option>
+                    <option value="support_admin">Support (read-only + view as faculty)</option>
+                    <option value="readonly_admin">Read-Only (view only)</option>
+                </select>
+            </div>
+            <div class="form-group" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary">Add Admin</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Admin Roles Reference -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header"><h3>Role Permissions</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Permission</th><th>Super Admin</th><th>Platform Admin</th><th>Support</th><th>Read-Only</th></tr></thead>
+            <tbody>
+                {% set perms = [
+                    ('View Faculty', true, true, true, true),
+                    ('Edit Faculty', true, true, false, false),
+                    ('Suspend Faculty', true, true, false, false),
+                    ('View Security Logs', true, true, true, false),
+                    ('Manage Security', true, true, false, false),
+                    ('Export Data', true, true, false, false),
+                    ('Manage Migrations', true, true, false, false),
+                    ('Manage Admins', true, false, false, false),
+                    ('View as Faculty', true, true, true, false),
+                    ('System Settings', true, false, false, false),
+                    ('Create Backups', true, true, false, false),
+                ] %}
+                {% for name, sa, pa, su, ro in perms %}
+                <tr>
+                    <td style="font-weight: 500;">{{ name }}</td>
+                    <td>{% if sa %}<span style="color: #059669;">✓</span>{% else %}<span style="color: #dc2626;">✗</span>{% endif %}</td>
+                    <td>{% if pa %}<span style="color: #059669;">✓</span>{% else %}<span style="color: #dc2626;">✗</span>{% endif %}</td>
+                    <td>{% if su %}<span style="color: #059669;">✓</span>{% else %}<span style="color: #dc2626;">✗</span>{% endif %}</td>
+                    <td>{% if ro %}<span style="color: #059669;">✓</span>{% else %}<span style="color: #dc2626;">✗</span>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Existing Admins -->
+<div class="card">
+    <div class="card-header"><h3>Current Administrators</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for a in admins %}
+                <tr>
+                    <td style="font-weight: 600;">{{ a.username }}{% if a.id == session.admin_id %} <span class="badge badge-info">You</span>{% endif %}</td>
+                    <td>
+                        {% if a.id != session.admin_id %}
+                        <form method="POST" action="{{ url_for('platform_update_admin_role', aid=a.id) }}" style="display:inline;">
+                            <select name="role" class="form-control" style="display:inline-block; width: auto; padding: 0.2rem 0.5rem; font-size: 0.78rem;" onchange="this.form.submit()">
+                                <option value="super_admin" {{ 'selected' if a.role == 'super_admin' }}>Super Admin</option>
+                                <option value="platform_admin" {{ 'selected' if a.role == 'platform_admin' }}>Platform Admin</option>
+                                <option value="support_admin" {{ 'selected' if a.role == 'support_admin' }}>Support</option>
+                                <option value="readonly_admin" {{ 'selected' if a.role == 'readonly_admin' }}>Read-Only</option>
+                            </select>
+                        </form>
+                        {% else %}
+                        <span class="badge badge-info">{{ a.role or 'super_admin' }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size: 0.82rem;">{{ a.created_at[:10] if a.created_at else '-' }}</td>
+                    <td>
+                        {% if a.id != session.admin_id %}
+                        <form method="POST" action="{{ url_for('platform_delete_admin', aid=a.id) }}" style="display:inline;" onsubmit="return confirm('Delete admin {{ a.username }}? This cannot be undone.')">
+                            <button type="submit" class="btn btn-danger btn-xs">Delete</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

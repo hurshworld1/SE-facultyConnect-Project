@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Publications - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar"><div class="container"><a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a><ul class="navbar-nav"><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div></nav>
+    <div class="dashboard-layout">
+        {% set active_page = 'publications' %}
+        {% include 'faculty/_sidebar.html' %}
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Manage Publications</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Add your journal articles, conference papers, and other publications.</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Publication</h3>
+                <form method="POST" action="{{ url_for('manage_publications') }}">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group">
+                        <label for="title">Paper Title</label>
+                        <input type="text" id="title" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="authors">Authors</label>
+                            <input type="text" id="authors" name="authors" class="form-control" placeholder="e.g. A. Kumar, B. Singh">
+                        </div>
+                        <div class="form-group">
+                            <label for="pub_type">Type</label>
+                            <select id="pub_type" name="pub_type" class="form-control">
+                                <option value="journal">Journal Article</option>
+                                <option value="conference">Conference Paper</option>
+                                <option value="book">Book</option>
+                                <option value="chapter">Book Chapter</option>
+                                <option value="preprint">Preprint</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="journal">Journal / Conference</label>
+                            <input type="text" id="journal" name="journal" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <input type="text" id="year" name="year" class="form-control" placeholder="e.g. 2023">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="doi">DOI</label>
+                            <input type="text" id="doi" name="doi" class="form-control" placeholder="10.xxxx/xxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label for="url">URL</label>
+                            <input type="url" id="url" name="url" class="form-control" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="abstract">Abstract</label>
+                        <textarea id="abstract" name="abstract" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Publication</button>
+                </form>
+            </div>
+
+            {% if items %}
+            {% for p in items %}
+            <div class="card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">{{ p.title }}</h4>
+                        {% if p.authors %}<p style="color: #718096; font-size: 0.85rem; margin: 0;">{{ p.authors }}</p>{% endif %}
+                        <p style="color: #4a5568; font-size: 0.85rem; font-style: italic; margin: 0.25rem 0;">{{ p.journal }}{% if p.year %}, {{ p.year }}{% endif %} {% if p.pub_type %}<span style="background: #edf2f7; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.75rem; font-style: normal;">{{ p.pub_type }}</span>{% endif %}</p>
+                        {% if p.doi %}<p style="font-size: 0.8rem; color: #3182ce; margin: 0;">DOI: {{ p.doi }}</p>{% endif %}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="status-{{ 'active' if p.is_published else 'inactive' }}">{{ 'Visible' if p.is_published else 'Hidden' }}</span>
+                        <form method="POST" style="display: inline;"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ p.id }}"><button type="submit" class="btn btn-sm btn-outline">{{ 'Hide' if p.is_published else 'Show' }}</button></form>
+                        <form method="POST" style="display: inline;" onsubmit="return confirm('Delete?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ p.id }}"><button type="submit" class="btn btn-sm btn-danger">Delete</button></form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state"><h3>No publications added yet</h3></div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

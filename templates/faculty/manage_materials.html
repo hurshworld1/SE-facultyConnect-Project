@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Materials - {{ course.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar"><div class="container"><a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a><ul class="navbar-nav"><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div></nav>
+    <div class="dashboard-layout">
+        {% set active_page = 'courses' %}
+        {% include 'faculty/_sidebar.html' %}
+        <main class="dashboard-content">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                <a href="{{ url_for('manage_courses') }}" class="btn btn-sm btn-outline">Back</a>
+                <h1 style="font-size: 1.5rem; margin: 0;">Materials: {{ course.name }}</h1>
+            </div>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Upload PDFs, slides, notes, and other study materials for this course.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Upload Material</h3>
+                <form method="POST" action="{{ url_for('manage_materials', course_id=course.id) }}" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="upload">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Material Title</label>
+                            <input type="text" id="title" name="title" class="form-control" placeholder="e.g. Lecture 1 Slides" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="file">File</label>
+                            <input type="file" id="file" name="file" class="form-control" required>
+                            <small style="color: #718096; font-size: 0.8rem;">PDF, PPT, DOC, DOCX, ZIP (max 16MB)</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description (optional)</label>
+                        <input type="text" id="description" name="description" class="form-control" placeholder="Brief description of the material">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                </form>
+            </div>
+
+            {% if materials %}
+            {% for m in materials %}
+            <div class="card" style="margin-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 40px; height: 40px; background: #ebf8ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #2b6cb0; font-size: 0.7rem; text-transform: uppercase; flex-shrink: 0;">{{ m.file_type or 'file' }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.95rem;">{{ m.title }}</div>
+                        {% if m.description %}<div style="font-size: 0.85rem; color: #718096;">{{ m.description }}</div>{% endif %}
+                        <div style="font-size: 0.75rem; color: #a0aec0;">Uploaded {{ m.uploaded_at[:10] }}</div>
+                    </div>
+                    <a href="{{ url_for('download_file', filename='materials/' + m.file_path) }}" class="btn btn-sm btn-primary">Download</a>
+                    <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this material?')">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="{{ m.id }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state"><h3>No materials uploaded yet</h3><p>Upload your first course material using the form above.</p></div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

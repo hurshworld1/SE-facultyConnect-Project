@@ -1,0 +1,42 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'data' %}
+{% block title %}Migration Requests{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Migration Requests</h1>
+    <p>Faculty members requesting to disconnect their data from the platform.</p>
+</div>
+
+{% if requests %}
+<div class="card">
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Faculty</th><th>Email</th><th>Provider</th><th>Reason</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td style="font-weight: 600;"><a href="{{ url_for('platform_user_detail', fid=r.faculty_id) }}" style="color: #2563eb; text-decoration: none;">{{ r.full_name }}</a></td>
+                    <td style="font-size: 0.82rem;">{{ r.target_email or r.email }}</td>
+                    <td style="font-size: 0.82rem;">{{ r.hosting_provider or '-' }}</td>
+                    <td style="font-size: 0.82rem; max-width: 200px; color: #6b7280;">{{ r.reason[:80] if r.reason else '-' }}</td>
+                    <td><span class="badge badge-{{ 'success' if r.status == 'approved' else 'danger' if r.status == 'rejected' else 'warning' }}">{{ r.status }}</span></td>
+                    <td style="font-size: 0.82rem;">{{ r.created_at[:10] if r.created_at else '' }}</td>
+                    <td>
+                        {% if r.status == 'pending' %}
+                        <a href="{{ url_for('platform_review_migration', req_id=r.id) }}" class="btn btn-primary btn-xs">Review</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">
+    <h3>No migration requests</h3>
+    <p>Faculty migration requests will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

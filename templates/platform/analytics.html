@@ -1,0 +1,132 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'analytics' %}
+{% block title %}Platform Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Platform Analytics</h1>
+    <p>Faculty growth, content metrics, and engagement data.</p>
+</div>
+
+<!-- Key Metrics -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ content_stats.publications }}</div>
+            <div class="stat-label">Publications</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ content_stats.courses }}</div>
+            <div class="stat-label">Courses</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ content_stats.materials }}</div>
+            <div class="stat-label">Materials</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ profile_complete }}/{{ profile_total }}</div>
+            <div class="stat-label">Complete Profiles</div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="margin-bottom: 1.5rem;">
+    <!-- Faculty Growth -->
+    <div class="card">
+        <div class="card-header"><h3>Faculty Registration by Month</h3></div>
+        <div class="card-body">
+            {% if faculty_growth %}
+            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                {% set max_count = faculty_growth[0].count if faculty_growth else 1 %}
+                {% for g in faculty_growth %}
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 0.78rem; color: #6b7280; min-width: 70px;">{{ g.month }}</span>
+                    <div style="flex: 1; height: 20px; background: #f3f4f6; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ (g.count / max_count * 100)|int }}%; background: #2563eb; border-radius: 4px; min-width: 4px;"></div>
+                    </div>
+                    <span style="font-size: 0.78rem; font-weight: 600; min-width: 20px;">{{ g.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color: #9ca3af; text-align: center;">No data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Content Breakdown -->
+    <div class="card">
+        <div class="card-header"><h3>Content Breakdown</h3></div>
+        <div class="card-body">
+            {% set items = [
+                ('Publications', content_stats.publications, '#2563eb'),
+                ('Courses', content_stats.courses, '#059669'),
+                ('Materials', content_stats.materials, '#7c3aed'),
+                ('Achievements', content_stats.achievements, '#d97706'),
+                ('Research', content_stats.research, '#dc2626'),
+                ('Students', content_stats.students, '#0284c7'),
+                ('Projects', content_stats.projects, '#059669'),
+                ('Announcements', content_stats.announcements, '#6b7280')
+            ] %}
+            {% set max_val = [] %}
+            {% for name, val, color in items %}{% if val > (max_val[0] if max_val else 0) %}{% if max_val %}{% set _ = max_val.pop() %}{% endif %}{% set _ = max_val.append(val) %}{% endif %}{% endfor %}
+            {% set max_count = max_val[0] if max_val else 1 %}
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for name, val, color in items %}
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="font-size: 0.8rem; color: #6b7280; min-width: 100px;">{{ name }}</span>
+                    <div style="flex: 1; height: 18px; background: #f3f4f6; border-radius: 4px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ (val / max_count * 100)|int if max_count else 0 }}%; background: {{ color }}; border-radius: 4px; min-width: {{ '4px' if val > 0 else '0' }};"></div>
+                    </div>
+                    <span style="font-size: 0.8rem; font-weight: 600; min-width: 25px;">{{ val }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Actions -->
+<div class="grid-2">
+    <div class="card">
+        <div class="card-header"><h3>Top Platform Actions</h3></div>
+        <div class="card-body" style="padding: 0.5rem 1.25rem;">
+            {% for a in top_actions %}
+            <div class="detail-row">
+                <span class="label" style="min-width: 180px;">{{ a.action|replace('_', ' ')|title }}</span>
+                <span class="value" style="font-weight: 600;">{{ a.count }}</span>
+            </div>
+            {% endfor %}
+            {% if not top_actions %}
+            <p style="color: #9ca3af; text-align: center; padding: 1rem;">No activity data</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3>Activity Trend (30 days)</h3></div>
+        <div class="card-body">
+            {% if activity_by_day %}
+            {% set max_day = activity_by_day|map(attribute='count')|max %}
+            <div style="display: flex; align-items: flex-end; gap: 2px; height: 120px;">
+                {% for d in activity_by_day %}
+                <div style="flex: 1; height: {{ (d.count / max_day * 100) if max_day else 0 }}%; background: #2563eb; border-radius: 2px 2px 0 0; min-height: 2px; position: relative;" title="{{ d.day }}: {{ d.count }}"></div>
+                {% endfor %}
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                <span style="font-size: 0.7rem; color: #9ca3af;">{{ activity_by_day[0].day if activity_by_day else '' }}</span>
+                <span style="font-size: 0.7rem; color: #9ca3af;">{{ activity_by_day[-1].day if activity_by_day else '' }}</span>
+            </div>
+            {% else %}
+            <p style="color: #9ca3af; text-align: center;">No activity data for the last 30 days</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ faculty.full_name }} - Faculty Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .cert-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
+        .cert-modal.active { display: flex; }
+        .cert-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+
+        .pub-section-title {
+            font-size: 1rem; font-weight: 700; color: #1a365d; margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .pub-section-title svg { width: 20px; height: 20px; }
+
+        .contact-form-card {
+            background: white; padding: 2rem; border-radius: 12px;
+            border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .contact-form-card h3 {
+            font-size: 1.1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+
+        /* Hamburger Menu */
+        .ham-wrap { position: fixed; top: 14px; left: 16px; z-index: 900; }
+        .navbar .container { padding-left: 58px; }
+        .ham-btn {
+            width: 42px; height: 42px; border-radius: 10px; border: 1px solid #e2e8f0;
+            background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .ham-btn:hover { background: #f7fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .ham-btn svg { width: 20px; height: 20px; color: #1a365d; }
+        .ham-dropdown {
+            display: none; position: absolute; top: 50px; left: 0; min-width: 240px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); overflow: hidden;
+        }
+        .ham-dropdown.open { display: block; }
+        .ham-item {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1rem;
+            font-size: 0.85rem; font-weight: 500; color: #4a5568; cursor: pointer;
+            text-decoration: none; transition: background 0.15s; border: none; background: none; width: 100%; text-align: left;
+        }
+        .ham-item:hover { background: #f7fafc; color: #1a365d; }
+        .ham-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .ham-divider { height: 1px; background: #e2e8f0; margin: 0.35rem 0; }
+        .ham-section-label {
+            padding: 0.45rem 1rem 0.2rem; font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; color: #a0aec0;
+        }
+        .ham-page-link {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1rem;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            text-decoration: none; transition: all 0.15s; border: none; width: 100%; text-align: left;
+        }
+        .ham-page-link.home-link { background: #ebf8ff; color: #2b6cb0; }
+        .ham-page-link.home-link:hover { background: #bee3f8; }
+        .ham-page-link.academic-link { color: #805ad5; background: #faf5ff; }
+        .ham-page-link.academic-link:hover { background: #e9d8fd; }
+        .ham-page-link.pubs-link { color: #2f855a; background: #f0fff4; }
+        .ham-page-link.pubs-link:hover { background: #c6f6d5; }
+        .ham-page-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+        @media (max-width: 768px) {
+            .ham-wrap { top: 10px; left: 10px; }
+            .ham-btn { width: 38px; height: 38px; }
+            .ham-dropdown { min-width: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                {% if session.get('faculty_id') %}
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('index') }}">Directory</a></li>
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hamburger Menu -->
+    <div class="ham-wrap">
+        <button class="ham-btn" onclick="document.getElementById('hamDrop').classList.toggle('open')" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="ham-dropdown" id="hamDrop">
+            <div class="ham-page-link home-link" style="cursor: default;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                Home (current)
+            </div>
+            <div class="ham-divider"></div>
+            <a href="#announcements" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#d69e2e" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+                Announcements
+            </a>
+            <div class="ham-divider"></div>
+            <a href="#courses" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                Courses &amp; Schedule
+            </a>
+            <div class="ham-divider"></div>
+            <a href="#materials" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                Materials &amp; Notes
+            </a>
+            <div class="ham-divider"></div>
+            <a href="#videos" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                Lecture Videos
+            </a>
+            <div class="ham-divider"></div>
+            <a href="#resources" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#805ad5" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+                PDFs &amp; Documents
+            </a>
+            <div class="ham-divider"></div>
+            <a href="#contact" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                Contact
+            </a>
+            <div class="ham-divider"></div>
+            <a href="{{ url_for('public_academic', username=faculty.username) }}" class="ham-page-link academic-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                Academic Profile
+            </a>
+            <div class="ham-divider"></div>
+            <a href="{{ url_for('public_publications', username=faculty.username) }}" class="ham-page-link pubs-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                Publications
+            </a>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            {% if faculty.photo %}
+            <img src="{{ url_for('uploaded_file', filename='photos/' + faculty.photo) }}" alt="{{ faculty.full_name }}" class="hero-photo">
+            {% else %}
+            <div style="width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 4rem; font-weight: 700; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.2);">{{ faculty.full_name[0] }}</div>
+            {% endif %}
+            <div class="hero-info">
+                <h1>{{ faculty.full_name }}</h1>
+                <div class="designation">{{ faculty.designation }}</div>
+                <div class="department">{{ faculty.department }}</div>
+                {% if faculty.institution %}
+                <div style="opacity: 0.7; font-size: 0.9rem;">{{ faculty.institution }}</div>
+                {% endif %}
+                {% if faculty.is_detached is defined and faculty.is_detached %}
+                <div style="margin-top: 0.75rem; display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); border-radius: 20px; padding: 0.3rem 0.8rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;">Independent Site</div>
+                {% endif %}
+                <div class="hero-links" style="margin-top: 1rem;">
+                    {% if faculty.email %}<a href="mailto:{{ faculty.email }}">
+                        <svg style="width:13px;height:13px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        Email</a>{% endif %}
+                    {% if faculty.google_scholar %}<a href="{{ faculty.google_scholar|safe_url }}" target="_blank">
+                        <svg style="width:13px;height:13px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                        Scholar</a>{% endif %}
+                    {% if faculty.linkedin %}<a href="{{ faculty.linkedin|safe_url }}" target="_blank">
+                        <svg style="width:13px;height:13px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                        LinkedIn</a>{% endif %}
+                    {% if faculty.github %}<a href="{{ faculty.github|safe_url }}" target="_blank">
+                        <svg style="width:13px;height:13px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+                        GitHub</a>{% endif %}
+                    {% if faculty.resume_file %}<a href="{{ url_for('download_file', filename='resumes/' + faculty.resume_file) }}">
+                        <svg style="width:13px;height:13px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Resume</a>{% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="container" style="padding-top: 1rem;">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <!-- ==================== HOME (Student Essentials) ==================== -->
+
+        <!-- Announcements -->
+        <section class="section" id="announcements">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#d69e2e" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    Announcements &amp; Updates
+                </div>
+                {% if announcements %}
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem;">
+                    {% for a in announcements %}
+                    <div style="background: white; border-radius: 12px; padding: 1.25rem; border-left: 4px solid {% if a.is_important %}#e53e3e{% else %}#3182ce{% endif %}; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem;">
+                            {% if a.is_important %}<span style="background: #fff5f5; color: #e53e3e; padding: 0.1rem 0.45rem; border-radius: 6px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Important</span>{% endif %}
+                            <span style="font-size: 0.78rem; color: #a0aec0;">{{ a.created_at[:10] if a.created_at else '' }}</span>
+                        </div>
+                        <h4 style="margin: 0 0 0.35rem 0; font-size: 0.95rem; color: #1a365d;">{{ a.title }}</h4>
+                        <p style="margin: 0; font-size: 0.88rem; color: #4a5568; line-height: 1.6;">{{ a.content }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 2rem; color: #a0aec0;">
+                    <svg style="width:40px;height:40px;margin-bottom:0.5rem;opacity:0.3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    <p>No announcements at this time.</p>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- Courses & Schedule -->
+        {% if courses %}
+        <section class="section" id="courses" style="background: #f7fafc;">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#38a169" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                    Courses &amp; Schedule
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem;">
+                    {% for c in courses %}
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0 0 0.3rem 0; font-size: 1rem; color: #1a365d;">{{ c.name }}</h4>
+                                {% if c.description %}<p style="font-size: 0.85rem; color: #4a5568; margin: 0.25rem 0 0 0; line-height: 1.5;">{{ c.description }}</p>{% endif %}
+                            </div>
+                            {% if c.code %}<span style="background: #f0fff4; color: #276749; padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-left: 0.75rem;">{{ c.code }}</span>{% endif %}
+                        </div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid #f0f0f0;">
+                            {% if c.schedule %}<div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #4a5568;"><svg style="width:14px;height:14px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>{{ c.schedule }}</div>{% endif %}
+                            {% if c.semester %}<div style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #718096;"><svg style="width:14px;height:14px;color:#a0aec0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>{{ c.semester }}</div>{% endif %}
+                        </div>
+                        <div style="margin-top: 0.85rem;">
+                            <a href="{{ url_for('course_detail', username=faculty.username, course_id=c.id) }}" style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.45rem 0.9rem; background: #ebf8ff; color: #3182ce; border-radius: 8px; font-size: 0.82rem; font-weight: 600; text-decoration: none; transition: all 0.15s;" onmouseover="this.style.background='#3182ce';this.style.color='white'" onmouseout="this.style.background='#ebf8ff';this.style.color='#3182ce'">
+                                <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                                View Materials &amp; Notes
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Study Materials & Resources -->
+        {% if materials %}
+        <section class="section" id="materials">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Study Materials, PDFs &amp; Notes
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+                    {% for m in materials %}
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: all 0.15s;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.04)'">
+                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <div style="width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: {% if m.file_type == 'pdf' %}#fff5f5{% elif m.file_type in ['ppt', 'pptx'] %}#faf5ff{% elif m.file_type in ['doc', 'docx'] %}#ebf8ff{% else %}#f0fff4{% endif %};">
+                                <svg style="width:20px;height:20px;color:{% if m.file_type == 'pdf' %}#e53e3e{% elif m.file_type in ['ppt', 'pptx'] %}#805ad5{% elif m.file_type in ['doc', 'docx'] %}#3182ce{% else %}#38a169{% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; font-size: 0.92rem; color: #2d3748; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ m.title }}</div>
+                                <div style="font-size: 0.78rem; color: #718096;">{{ m.course_name }}</div>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem;">
+                                    <span style="background: {% if m.file_type == 'pdf' %}#fff5f5; color: #e53e3e{% elif m.file_type in ['ppt', 'pptx'] %}#faf5ff; color: #805ad5{% elif m.file_type in ['doc', 'docx'] %}#ebf8ff; color: #3182ce{% else %}#f0fff4; color: #38a169{% endif %}; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">{{ m.file_type or 'file' }}</span>
+                                    <span style="font-size: 0.72rem; color: #a0aec0;">{{ m.uploaded_at[:10] }}</span>
+                                </div>
+                            </div>
+                            <a href="{{ url_for('download_file', filename='materials/' + m.file_path) }}" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: #ebf8ff; color: #3182ce; flex-shrink: 0; transition: all 0.15s; text-decoration: none;" onmouseover="this.style.background='#3182ce';this.style.color='white'" onmouseout="this.style.background='#ebf8ff';this.style.color='#3182ce'">
+                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Lecture Videos -->
+        {% if video_resources %}
+        <section class="section" id="videos">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#e53e3e" stroke-width="2"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                    Lecture Videos
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 1.25rem;">
+                    {% for r in video_resources %}
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s;" onmouseover="this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'">
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; background: #000;">
+                            {% if r.file_path %}
+                            <video controls preload="metadata" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                                <source src="{{ url_for('uploaded_file', filename='materials/' + r.file_path) }}" type="video/{{ r.file_path.split('.')[-1] }}">
+                                Your browser does not support the video tag.
+                            </video>
+                            {% elif r.url %}
+                                {% set yt_id = '' %}
+                                {% if 'youtube.com/watch' in r.url %}
+                                    {% set yt_id = r.url.split('v=')[1].split('&')[0] if 'v=' in r.url else '' %}
+                                {% elif 'youtu.be/' in r.url %}
+                                    {% set yt_id = r.url.split('youtu.be/')[1].split('?')[0] %}
+                                {% endif %}
+                                {% if yt_id %}
+                                <iframe src="https://www.youtube.com/embed/{{ yt_id }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen title="{{ r.title }}"></iframe>
+                                {% else %}
+                                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                                    <a href="{{ r.url|safe_url }}" target="_blank" style="color: white; text-decoration: none; text-align: center;">
+                                        <svg style="width:64px;height:64px;margin-bottom:0.5rem;opacity:0.8;" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                                        <div style="font-size: 0.85rem; opacity: 0.7;">Click to play video</div>
+                                    </a>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                                <div style="color: white; text-align: center; opacity: 0.5;">
+                                    <svg style="width:48px;height:48px;" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div style="padding: 0.85rem 1rem;">
+                            <div style="font-weight: 600; font-size: 0.92rem; color: #1a365d; margin-bottom: 0.2rem;">{{ r.title }}</div>
+                            {% if r.description %}<div style="font-size: 0.82rem; color: #718096; line-height: 1.4;">{{ r.description }}</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- PDFs & Files -->
+        {% if file_resources %}
+        <section class="section" id="resources" style="background: #f7fafc;">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                    PDFs, Notes &amp; Documents
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem;">
+                    {% for r in file_resources %}
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem 1.25rem; transition: all 0.15s; display: flex; align-items: flex-start; gap: 0.75rem;" onmouseover="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.08)'" onmouseout="this.style.boxShadow='none'">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: {% if r.resource_type == 'pdf' %}#fff5f5{% elif r.resource_type == 'ppt' %}#ebf8ff{% elif r.resource_type == 'doc' %}#f0fff4{% else %}#edf2f7{% endif %};">
+                            <svg style="width:20px;height:20px;color:{% if r.resource_type == 'pdf' %}#e53e3e{% elif r.resource_type == 'ppt' %}#3182ce{% elif r.resource_type == 'doc' %}#38a169{% else %}#718096{% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                        </div>
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 600; font-size: 0.92rem; color: #2d3748; margin-bottom: 0.2rem;">{{ r.title }}</div>
+                            {% if r.description %}<div style="font-size: 0.82rem; color: #718096; line-height: 1.4;">{{ r.description }}</div>{% endif %}
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem;">
+                                <span style="background: {% if r.resource_type == 'pdf' %}#fff5f5; color: #e53e3e{% elif r.resource_type == 'ppt' %}#ebf8ff; color: #3182ce{% elif r.resource_type == 'doc' %}#f0fff4; color: #38a169{% else %}#edf2f7; color: #718096{% endif %}; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">{{ r.resource_type }}</span>
+                                <span style="font-size: 0.72rem; color: #a0aec0;">{{ r.created_at[:10] if r.created_at else '' }}</span>
+                            </div>
+                        </div>
+                        {% if r.file_path %}
+                        <a href="{{ url_for('download_file', filename='materials/' + r.file_path) }}" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; background: #ebf8ff; color: #3182ce; flex-shrink: 0; transition: all 0.15s; text-decoration: none;" onmouseover="this.style.background='#3182ce';this.style.color='white'" onmouseout="this.style.background='#ebf8ff';this.style.color='#3182ce'">
+                            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Contact & Office -->
+        <section class="section" id="contact">
+            <div class="container">
+                <div class="pub-section-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#3182ce" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                    Contact &amp; Office
+                </div>
+                <div class="contact-grid">
+                    <div>
+                        {% if faculty.email %}
+                        <div class="contact-item">
+                            <div style="width: 36px; height: 36px; background: #ebf8ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width:18px;height:18px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            </div>
+                            <div><strong>Email</strong><br><a href="mailto:{{ faculty.email }}">{{ faculty.email }}</a></div>
+                        </div>
+                        {% endif %}
+                        {% if faculty.phone %}
+                        <div class="contact-item">
+                            <div style="width: 36px; height: 36px; background: #f0fff4; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width:18px;height:18px;color:#38a169;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                            </div>
+                            <div><strong>Phone</strong><br>{{ faculty.phone }}</div>
+                        </div>
+                        {% endif %}
+                        {% if faculty.office_location %}
+                        <div class="contact-item">
+                            <div style="width: 36px; height: 36px; background: #faf5ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width:18px;height:18px;color:#805ad5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            </div>
+                            <div><strong>Office</strong><br>{{ faculty.office_location }}</div>
+                        </div>
+                        {% endif %}
+                        {% if faculty.office_hours %}
+                        <div class="contact-item">
+                            <div style="width: 36px; height: 36px; background: #fffff0; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width:18px;height:18px;color:#d69e2e;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+                            </div>
+                            <div><strong>Office Hours</strong><br>{{ faculty.office_hours }}</div>
+                        </div>
+                        {% endif %}
+                        {% if faculty.address %}
+                        <div class="contact-item">
+                            <div style="width: 36px; height: 36px; background: #edf2f7; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width:18px;height:18px;color:#4a5568;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                            </div>
+                            <div><strong>Address</strong><br>{{ faculty.address }}</div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <div class="contact-form-card">
+                            <h3>
+                                <svg style="width:20px;height:20px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                Send a Message
+                            </h3>
+                            <form action="{{ url_for('send_message', username=faculty.username) }}" method="POST" class="contact-form" style="background: transparent; padding: 0; border: none;">
+                                <div class="form-group">
+                                    <label for="msg-name">Your Name</label>
+                                    <input type="text" id="msg-name" name="name" class="form-control" placeholder="Enter your full name" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="msg-email">Your Email</label>
+                                    <input type="email" id="msg-email" name="email" class="form-control" placeholder="you@example.com" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="msg-subject">Subject</label>
+                                    <input type="text" id="msg-subject" name="subject" class="form-control" placeholder="What is this about?">
+                                </div>
+                                <div class="form-group">
+                                    <label for="msg-text">Message</label>
+                                    <textarea id="msg-text" name="message" class="form-control" rows="4" placeholder="Write your message here..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">
+                                    <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+                                    Send Message
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Powered by FacultyConnect</p>
+        </div>
+    </footer>
+
+    <!-- Certificate Lightbox -->
+    <div class="cert-modal" id="certModal" onclick="this.classList.remove('active')">
+        <img id="certImg" src="" alt="Certificate">
+    </div>
+
+    <script>
+    function showCert(src) {
+        document.getElementById('certImg').src = src;
+        document.getElementById('certModal').classList.add('active');
+    }
+    function closeMenu() {
+        document.getElementById('hamDrop').classList.remove('open');
+    }
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        var wrap = document.querySelector('.ham-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('hamDrop').classList.remove('open');
+        }
+    });
+    </script>
+</body>
+</html>

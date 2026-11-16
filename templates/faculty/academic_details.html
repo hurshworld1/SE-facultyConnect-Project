@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Details - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .top-bar {
+            background: white; border-bottom: 1px solid #e2e8f0;
+            padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 1rem;
+            position: sticky; top: 0; z-index: 10;
+        }
+        .top-bar .back-btn {
+            display: inline-flex; align-items: center; gap: 0.4rem;
+            padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+            text-decoration: none; color: #3182ce; background: #ebf8ff; border: 1px solid #bee3f8;
+            transition: all 0.15s;
+        }
+        .top-bar .back-btn:hover { background: #3182ce; color: white; text-decoration: none; }
+        .top-bar h2 { font-size: 1.1rem; font-weight: 700; color: #1a365d; margin: 0; }
+
+        .section-group { margin-bottom: 2rem; }
+        .section-group-header {
+            display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
+            padding-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0;
+        }
+        .section-group-header .icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .section-group-header h3 { font-size: 1rem; font-weight: 700; color: #2d3748; margin: 0; }
+        .section-group-header .count { color: #a0aec0; font-size: 0.85rem; margin-left: 0.35rem; }
+
+        .detail-card {
+            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 1.1rem 1.25rem; margin-bottom: 0.75rem;
+            transition: all 0.15s;
+        }
+        .detail-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .detail-card h4 { font-size: 0.95rem; font-weight: 600; color: #1a365d; margin: 0 0 0.3rem 0; }
+        .detail-card .sub { font-size: 0.85rem; color: #4a5568; }
+        .detail-card .meta { font-size: 0.78rem; color: #a0aec0; margin-top: 0.25rem; }
+
+        .status-badge {
+            display: inline-block; padding: 0.15rem 0.5rem; border-radius: 12px;
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .status-ongoing { background: #ebf8ff; color: #2b6cb0; }
+        .status-completed { background: #f0fff4; color: #276749; }
+
+        .cat-badge {
+            display: inline-block; padding: 0.1rem 0.45rem; border-radius: 6px;
+            font-size: 0.7rem; font-weight: 600; text-transform: capitalize;
+        }
+        .cat-award { background: #fffff0; color: #975a16; }
+        .cat-grant { background: #f0fff4; color: #276749; }
+        .cat-fellowship { background: #faf5ff; color: #6b46c1; }
+        .cat-recognition { background: #ebf8ff; color: #2b6cb0; }
+
+        .pub-type {
+            display: inline-block; padding: 0.1rem 0.45rem; border-radius: 6px;
+            font-size: 0.7rem; font-weight: 600; background: #edf2f7; color: #4a5568;
+        }
+
+        .empty-state {
+            text-align: center; padding: 2.5rem 1rem; color: #a0aec0;
+        }
+        .empty-state svg { width: 40px; height: 40px; margin-bottom: 0.75rem; opacity: 0.4; }
+        .empty-state p { font-size: 0.9rem; }
+        .empty-state a { color: #3182ce; font-weight: 600; text-decoration: none; }
+        .empty-state a:hover { text-decoration: underline; }
+
+        .toggle-abstract { color: #3182ce; cursor: pointer; font-size: 0.82rem; font-weight: 500; border: none; background: none; padding: 0; }
+        .toggle-abstract:hover { text-decoration: underline; }
+        .pub-abstract { display: none; margin-top: 0.75rem; padding: 1rem; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.85rem; line-height: 1.7; color: #4a5568; }
+        .pub-abstract.show { display: block; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('faculty_dashboard') }}">
+                    <svg style="width:14px;height:14px;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    Dashboard
+                </a></li>
+                <li><a href="{{ url_for('logout') }}">
+                    <svg style="width:14px;height:14px;vertical-align:middle;margin-right:4px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <a href="{{ url_for('faculty_dashboard') }}" class="back-btn">
+            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15,18 9,12 15,6"/></svg>
+            Back to Dashboard
+        </a>
+        <h2>Academic Details</h2>
+    </div>
+
+    <div class="dashboard-layout">
+        {% set active_page = 'academic' %}
+        {% include 'faculty/_sidebar.html' %}
+
+        <main class="dashboard-content" style="padding: 1.5rem;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <!-- Qualifications -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #ebf8ff;"><svg style="width:18px;height:18px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+                    <h3>Qualifications</h3>
+                    <span class="count">({{ qualifications|length }})</span>
+                </div>
+                {% if qualifications %}
+                {% for q in qualifications %}
+                <div class="detail-card">
+                    <h4>{{ q.degree }}</h4>
+                    {% if q.specialization %}<div class="sub">{{ q.specialization }}</div>{% endif %}
+                    {% if q.university %}<div class="meta">{{ q.university }}{% if q.year_of_passing %} &middot; {{ q.year_of_passing }}{% endif %}</div>{% endif %}
+                    {% if q.certificate_photo %}<div style="margin-top: 0.5rem;"><img src="{{ url_for('uploaded_file', filename='certificates/' + q.certificate_photo) }}" alt="Certificate" style="max-width: 200px; border-radius: 8px; border: 1px solid #e2e8f0;"></div>{% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                    <p>No qualifications added yet.<br><a href="{{ url_for('manage_qualifications') }}">Add your first qualification</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Research Interests -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #fff5f5;"><svg style="width:18px;height:18px;color:#e53e3e;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+                    <h3>Research Interests</h3>
+                    <span class="count">({{ research|length }})</span>
+                </div>
+                {% if research %}
+                {% for r in research %}
+                <div class="detail-card">
+                    <h4>{{ r.title }}</h4>
+                    {% if r.description %}<div class="sub">{{ r.description }}</div>{% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <p>No research interests added yet.<br><a href="{{ url_for('manage_research') }}">Add research areas</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Achievements & Awards -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #fffff0;"><svg style="width:18px;height:18px;color:#d69e2e;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"/></svg></div>
+                    <h3>Achievements & Awards</h3>
+                    <span class="count">({{ achievements|length }})</span>
+                </div>
+                {% if achievements %}
+                {% for a in achievements %}
+                <div class="detail-card">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                                <span class="cat-badge cat-{{ a.category }}">{{ a.category }}</span>
+                                {% if a.year %}<span class="meta">{{ a.year }}</span>{% endif %}
+                            </div>
+                            <h4>{{ a.title }}</h4>
+                            {% if a.description %}<div class="sub">{{ a.description }}</div>{% endif %}
+                        </div>
+                        {% if a.certificate_photo %}<img src="{{ url_for('uploaded_file', filename='certificates/' + a.certificate_photo) }}" alt="Certificate" style="width: 80px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0; flex-shrink: 0;">{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="7"/><polyline points="8.21,13.89 7,23 12,20 17,23 15.79,13.88"/></svg>
+                    <p>No achievements added yet.<br><a href="{{ url_for('manage_achievements') }}">Add your first achievement</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Publications -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #faf5ff;"><svg style="width:18px;height:18px;color:#805ad5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+                    <h3>Publications</h3>
+                    <span class="count">({{ publications|length }})</span>
+                </div>
+                {% if publications %}
+                {% for p in publications %}
+                <div class="detail-card">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <h4>{{ p.title }}</h4>
+                            {% if p.authors %}<div class="sub">{{ p.authors }}</div>{% endif %}
+                            <div class="meta">{{ p.journal }}{% if p.year %}, {{ p.year }}{% endif %}
+                                {% if p.pub_type %}<span class="pub-type" style="margin-left: 0.5rem;">{{ p.pub_type }}</span>{% endif %}
+                            </div>
+                            {% if p.doi %}<div class="meta"><a href="{{ p.url or ('https://doi.org/' + p.doi) }}" target="_blank" style="color: #3182ce;">DOI: {{ p.doi }}</a></div>{% endif %}
+                            {% if p.abstract %}
+                            <button class="toggle-abstract" onclick="toggleAbstract('abs-{{ p.id }}')">Show Abstract</button>
+                            <div class="pub-abstract" id="abs-{{ p.id }}">{{ p.abstract }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                    <p>No publications added yet.<br><a href="{{ url_for('manage_publications') }}">Add your first publication</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Research Students -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #ebf8ff;"><svg style="width:18px;height:18px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+                    <h3>Research Students</h3>
+                    <span class="count">({{ students|length }})</span>
+                </div>
+                {% if students %}
+                <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #e2e8f0;">
+                            <th style="text-align: left; padding: 0.75rem; font-size: 0.8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;">Name</th>
+                            <th style="text-align: left; padding: 0.75rem; font-size: 0.8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;">Program</th>
+                            <th style="text-align: left; padding: 0.75rem; font-size: 0.8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;">Research Topic</th>
+                            <th style="text-align: left; padding: 0.75rem; font-size: 0.8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+                            <th style="text-align: left; padding: 0.75rem; font-size: 0.8rem; font-weight: 700; color: #4a5568; text-transform: uppercase; letter-spacing: 0.5px;">Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in students %}
+                        <tr style="border-bottom: 1px solid #f0f0f0;">
+                            <td style="padding: 0.75rem; font-weight: 600; font-size: 0.9rem;">{{ s.name }}</td>
+                            <td style="padding: 0.75rem; font-size: 0.88rem; color: #4a5568;">{{ s.program }}</td>
+                            <td style="padding: 0.75rem; font-size: 0.88rem; color: #4a5568;">{{ s.research_topic }}</td>
+                            <td style="padding: 0.75rem;"><span class="status-badge status-{{ s.status }}">{{ s.status|capitalize }}</span></td>
+                            <td style="padding: 0.75rem; font-size: 0.85rem; color: #718096;">{{ s.start_year }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                    <p>No research students added yet.<br><a href="{{ url_for('manage_students') }}">Add a student</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Research Projects -->
+            <div class="section-group">
+                <div class="section-group-header">
+                    <div class="icon" style="background: #faf5ff;"><svg style="width:18px;height:18px;color:#805ad5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg></div>
+                    <h3>Research Projects</h3>
+                    <span class="count">({{ projects|length }})</span>
+                </div>
+                {% if projects %}
+                {% for p in projects %}
+                <div class="detail-card">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <h4>{{ p.title }}</h4>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                                <span class="status-badge status-{{ p.status }}">{{ p.status|capitalize }}</span>
+                                {% if p.funding_agency %}<span class="meta">{{ p.funding_agency }}</span>{% endif %}
+                            </div>
+                            {% if p.description %}<div class="sub" style="margin-top: 0.4rem;">{{ p.description }}</div>{% endif %}
+                            <div style="margin-top: 0.4rem;">
+                                {% if p.amount %}<span class="meta">Funding: INR {{ p.amount }}</span>{% endif %}
+                                {% if p.start_year %}<span class="meta"> &middot; {{ p.start_year }}{% if p.end_year %} - {{ p.end_year }}{% else %} - Present{% endif %}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="16,18 22,12 16,6"/><polyline points="8,6 2,12 8,18"/></svg>
+                    <p>No research projects added yet.<br><a href="{{ url_for('manage_projects') }}">Add a project</a></p>
+                </div>
+                {% endif %}
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+    function toggleAbstract(id) {
+        var el = document.getElementById(id);
+        el.classList.toggle('show');
+        var btn = el.previousElementSibling;
+        btn.textContent = el.classList.contains('show') ? 'Hide Abstract' : 'Show Abstract';
+    }
+    </script>
+</body>
+</html>

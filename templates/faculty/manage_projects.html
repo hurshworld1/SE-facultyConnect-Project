@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Projects - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar"><div class="container"><a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a><ul class="navbar-nav"><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div></nav>
+    <div class="dashboard-layout">
+        {% set active_page = 'projects' %}
+        {% include 'faculty/_sidebar.html' %}
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Manage Research Projects</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Add your funded and ongoing research projects with full details.</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Project</h3>
+                <form method="POST" action="{{ url_for('manage_projects') }}">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group">
+                        <label for="title">Project Title</label>
+                        <input type="text" id="title" name="title" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="funding_agency">Funding Agency</label>
+                            <input type="text" id="funding_agency" name="funding_agency" class="form-control" placeholder="e.g. DST-SERB">
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount (INR)</label>
+                            <input type="text" id="amount" name="amount" class="form-control" placeholder="e.g. 25,00,000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" class="form-control">
+                                <option value="ongoing">Ongoing</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="start_year">Start Year</label>
+                            <input type="text" id="start_year" name="start_year" class="form-control" placeholder="e.g. 2022">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="end_year">End Year (leave blank if ongoing)</label>
+                        <input type="text" id="end_year" name="end_year" class="form-control" placeholder="e.g. 2025">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Project</button>
+                </form>
+            </div>
+
+            {% if items %}
+            {% for p in items %}
+            <div class="card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">{{ p.title }}</h4>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.25rem;">
+                            <span class="status-{{ p.status }}">{{ p.status|capitalize }}</span>
+                            {% if p.funding_agency %}<span style="font-size: 0.8rem; color: #718096;">{{ p.funding_agency }}</span>{% endif %}
+                            {% if p.amount %}<span style="font-size: 0.8rem; color: #276749;">INR {{ p.amount }}</span>{% endif %}
+                            {% if p.start_year %}<span style="font-size: 0.8rem; color: #a0aec0;">{{ p.start_year }}{% if p.end_year %} - {{ p.end_year }}{% else %} - Present{% endif %}</span>{% endif %}
+                        </div>
+                        {% if p.description %}<p style="color: #4a5568; font-size: 0.875rem; margin: 0;">{{ p.description }}</p>{% endif %}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="status-{{ 'active' if p.is_published else 'inactive' }}">{{ 'Visible' if p.is_published else 'Hidden' }}</span>
+                        <form method="POST" style="display: inline;"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ p.id }}"><button type="submit" class="btn btn-sm btn-outline">{{ 'Hide' if p.is_published else 'Show' }}</button></form>
+                        <form method="POST" style="display: inline;" onsubmit="return confirm('Delete?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ p.id }}"><button type="submit" class="btn btn-sm btn-danger">Delete</button></form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state"><h3>No projects added yet</h3></div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

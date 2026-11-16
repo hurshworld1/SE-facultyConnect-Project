@@ -1,0 +1,39 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'security' %}
+{% block title %}Threat Detection{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Threat Detection</h1>
+    <p>Automatically detected security threats and suspicious activities.</p>
+</div>
+
+{% if threats %}
+{% for t in threats %}
+<div class="threat-item threat-{{ t.severity }}" style="margin-bottom: 0.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <strong style="font-size: 0.9rem;">{{ t.threat_type }}</strong>
+                <span class="badge badge-{{ 'danger' if t.severity == 'critical' else 'warning' if t.severity == 'high' else 'info' if t.severity == 'medium' else 'neutral' }}">{{ t.severity }}</span>
+                {% if t.is_resolved %}<span class="badge badge-success">Resolved</span>{% endif %}
+            </div>
+            <p style="font-size: 0.88rem; color: #4b5563; margin: 0.25rem 0;">{{ t.description }}</p>
+            <p style="font-size: 0.78rem; color: #9ca3af; margin: 0;">IP: {{ t.ip_address }} · {{ t.detected_at }}</p>
+        </div>
+        {% if not t.is_resolved %}
+        <form method="POST" action="{{ url_for('platform_resolve_threat', tid=t.id) }}">
+            <button type="submit" class="btn btn-success btn-xs" onclick="return confirm('Resolve this threat?')">Mark Resolved</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <h3>No threats detected</h3>
+    <p>The platform is operating normally.</p>
+</div>
+{% endif %}
+{% endblock %}

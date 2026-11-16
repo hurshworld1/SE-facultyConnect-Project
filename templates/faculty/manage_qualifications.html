@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Qualifications - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="dashboard-layout">
+{% set active_page = 'qualifications' %}
+        {% include 'faculty/_sidebar.html' %}
+
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Manage Qualifications</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Add your degrees, certifications, and upload certificate photos.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Add Form -->
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Qualification</h3>
+                <form method="POST" action="{{ url_for('manage_qualifications') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="degree">Degree / Certification</label>
+                            <input type="text" id="degree" name="degree" class="form-control" placeholder="e.g. Ph.D. Computer Science" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="specialization">Specialization</label>
+                            <input type="text" id="specialization" name="specialization" class="form-control" placeholder="e.g. Machine Learning">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="university">University / Institution</label>
+                            <input type="text" id="university" name="university" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="year_of_passing">Year of Passing</label>
+                            <input type="text" id="year_of_passing" name="year_of_passing" class="form-control" placeholder="e.g. 2015">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="certificate_photo">Certificate Photo (optional)</label>
+                        <input type="file" id="certificate_photo" name="certificate_photo" class="form-control" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Qualification</button>
+                </form>
+            </div>
+
+            <!-- Existing Qualifications -->
+            {% if qualifications %}
+            {% for q in qualifications %}
+            <div class="card" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h4 style="font-size: 1rem; margin-bottom: 0.25rem;">{{ q.degree }}</h4>
+                        {% if q.specialization %}
+                        <p style="color: #3182ce; font-size: 0.9rem; margin: 0;">{{ q.specialization }}</p>
+                        {% endif %}
+                        {% if q.university %}
+                        <p style="color: #4a5568; font-size: 0.875rem; margin: 0.25rem 0;">{{ q.university }}</p>
+                        {% endif %}
+                        {% if q.year_of_passing %}
+                        <p style="color: #a0aec0; font-size: 0.8rem; margin: 0;">Graduated {{ q.year_of_passing }}</p>
+                        {% endif %}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        {% if q.certificate_photo %}
+                        <img src="{{ url_for('uploaded_file', filename='certificates/' + q.certificate_photo) }}" alt="Certificate" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        {% endif %}
+                        <span class="status-{{ 'active' if q.is_published else 'inactive' }}">{{ 'Visible' if q.is_published else 'Hidden' }}</span>
+                        <form method="POST" style="display: inline;">
+                            <input type="hidden" name="action" value="toggle">
+                            <input type="hidden" name="id" value="{{ q.id }}">
+                            <button type="submit" class="btn btn-sm btn-outline">{{ 'Hide' if q.is_published else 'Show' }}</button>
+                        </form>
+                        <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this qualification?')">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="id" value="{{ q.id }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-state">
+                <h3>No qualifications added yet</h3>
+                <p>Use the form above to add your degrees and certifications.</p>
+            </div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

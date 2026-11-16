@@ -1,0 +1,130 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'data' %}
+{% block title %}Data & Migration Center{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Data &amp; Migration Center</h1>
+    <p>Monitor data ownership, exports, and faculty migration requests.</p>
+</div>
+
+<!-- Overview Stats -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ total_faculty }}</div>
+            <div class="stat-label">Faculty Profiles</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ total_publications }}</div>
+            <div class="stat-label">Publications</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ total_courses }}</div>
+            <div class="stat-label">Courses</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ total_materials }}</div>
+            <div class="stat-label">Materials</div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-nav">
+    <a href="{{ url_for('platform_data_migration', tab='overview') }}" class="{{ 'active' if tab == 'overview' }}">Overview</a>
+    <a href="{{ url_for('platform_data_migration', tab='migrations') }}" class="{{ 'active' if tab == 'migrations' }}">Migration Requests {% if pending %}<span class="badge badge-warning" style="margin-left:0.25rem;">{{ pending }}</span>{% endif %}</a>
+</div>
+
+{% if tab == 'overview' %}
+<!-- Data Summary -->
+<div class="grid-2" style="margin-bottom: 1.5rem;">
+    <div class="card">
+        <div class="card-header"><h3>Data Inventory</h3></div>
+        <div class="card-body" style="padding: 0.5rem 1.25rem;">
+            <div class="detail-row"><span class="label">Faculty Profiles</span><span class="value">{{ total_faculty }}</span></div>
+            <div class="detail-row"><span class="label">Publications</span><span class="value">{{ total_publications }}</span></div>
+            <div class="detail-row"><span class="label">Courses</span><span class="value">{{ total_courses }}</span></div>
+            <div class="detail-row"><span class="label">Course Materials</span><span class="value">{{ total_materials }}</span></div>
+            <div class="detail-row"><span class="label">Messages</span><span class="value">{{ total_messages }}</span></div>
+            <div class="detail-row"><span class="label">Announcements</span><span class="value">{{ total_announcements }}</span></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Migration Status</h3></div>
+        <div class="card-body" style="padding: 0.5rem 1.25rem;">
+            <div class="detail-row"><span class="label">Detached Faculty</span><span class="value"><span class="badge badge-purple">{{ detached }}</span></span></div>
+            <div class="detail-row"><span class="label">Pending Requests</span><span class="value"><span class="badge badge-warning">{{ pending }}</span></span></div>
+            <div class="detail-row"><span class="label">Approved</span><span class="value"><span class="badge badge-success">{{ approved }}</span></span></div>
+            <div class="detail-row"><span class="label">Rejected</span><span class="value"><span class="badge badge-danger">{{ rejected }}</span></span></div>
+            <div class="detail-row"><span class="label">DB Size</span><span class="value">{{ "%.1f"|format(db_size / 1048576) }} MB</span></div>
+            <div class="detail-row"><span class="label">Uploads Size</span><span class="value">{{ "%.1f"|format(upload_size / 1048576) }} MB</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Faculty Data Ownership -->
+<div class="card">
+    <div class="card-header"><h3>Faculty Data Ownership</h3></div>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Faculty</th><th>Status</th><th>Publications</th><th>Courses</th><th>Materials</th><th>Migration</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for f in faculty_list if f is defined %}
+                <tr>
+                    <td style="font-weight: 600;">{{ f.full_name }}</td>
+                    <td><span class="badge badge-{{ 'success' if f.is_active else 'danger' }}">{{ 'Active' if f.is_active else 'Inactive' }}</span></td>
+                    <td>{{ f.pub_count }}</td>
+                    <td>{{ f.course_count }}</td>
+                    <td>{{ f.mat_count }}</td>
+                    <td><span class="badge badge-{{ 'purple' if f.is_detached else 'neutral' }}">{{ 'Detached' if f.is_detached else 'Connected' }}</span></td>
+                    <td><a href="{{ url_for('platform_user_detail', fid=f.id) }}" class="btn btn-ghost btn-xs">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% if tab == 'migrations' %}
+<!-- Migration Requests -->
+<div class="card">
+    <div class="card-header"><h3>Migration Requests</h3></div>
+    {% if requests %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Faculty</th><th>Email</th><th>Provider</th><th>Reason</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for r in requests %}
+                <tr>
+                    <td style="font-weight: 600;"><a href="{{ url_for('platform_user_detail', fid=r.faculty_id) }}" style="color: #2563eb; text-decoration: none;">{{ r.full_name }}</a></td>
+                    <td style="font-size: 0.82rem;">{{ r.target_email or r.email }}</td>
+                    <td style="font-size: 0.82rem;">{{ r.hosting_provider or '-' }}</td>
+                    <td style="font-size: 0.82rem; max-width: 200px; color: #6b7280;">{{ r.reason[:80] if r.reason else '-' }}</td>
+                    <td><span class="badge badge-{{ 'success' if r.status == 'approved' else 'danger' if r.status == 'rejected' else 'warning' }}">{{ r.status }}</span></td>
+                    <td style="font-size: 0.82rem;">{{ r.created_at[:10] if r.created_at else '' }}</td>
+                    <td>
+                        {% if r.status == 'pending' %}
+                        <a href="{{ url_for('platform_review_migration', req_id=r.id) }}" class="btn btn-primary btn-xs">Review</a>
+                        {% else %}
+                        <span style="font-size: 0.75rem; color: #9ca3af;">Done</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state"><h3>No migration requests</h3><p>Faculty migration requests will appear here.</p></div>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

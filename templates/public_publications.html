@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publications - {{ faculty.full_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .pub-abstract { display: none; margin-top: 0.75rem; padding: 1rem; background: #f7fafc; border-radius: 8px; border: 1px solid #e2e8f0; font-size: 0.875rem; line-height: 1.7; color: #4a5568; }
+        .pub-abstract.show { display: block; }
+        .toggle-abstract { color: #3182ce; cursor: pointer; font-size: 0.85rem; font-weight: 500; border: none; background: none; padding: 0; }
+        .toggle-abstract:hover { text-decoration: underline; }
+        .section-title {
+            font-size: 1.1rem; font-weight: 700; color: #1a365d; margin-bottom: 1.25rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .section-title svg { width: 22px; height: 22px; }
+
+        /* Hamburger Menu */
+        .ham-wrap { position: fixed; top: 14px; left: 16px; z-index: 900; }
+        .navbar .container { padding-left: 58px; }
+        .ham-btn {
+            width: 42px; height: 42px; border-radius: 10px; border: 1px solid #e2e8f0;
+            background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .ham-btn:hover { background: #f7fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .ham-btn svg { width: 20px; height: 20px; color: #1a365d; }
+        .ham-dropdown {
+            display: none; position: absolute; top: 50px; left: 0; min-width: 240px;
+            background: white; border: 1px solid #e2e8f0; border-radius: 14px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); overflow: hidden;
+        }
+        .ham-dropdown.open { display: block; }
+        .ham-item {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1rem;
+            font-size: 0.85rem; font-weight: 500; color: #4a5568; cursor: pointer;
+            text-decoration: none; transition: background 0.15s; border: none; background: none; width: 100%; text-align: left;
+        }
+        .ham-item:hover { background: #f7fafc; color: #1a365d; }
+        .ham-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .ham-divider { height: 1px; background: #e2e8f0; margin: 0.35rem 0; }
+        .ham-section-label {
+            padding: 0.45rem 1rem 0.2rem; font-size: 0.68rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.8px; color: #a0aec0;
+        }
+        .ham-page-link {
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.65rem 1rem;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            text-decoration: none; transition: all 0.15s; border: none; width: 100%; text-align: left;
+        }
+        .ham-page-link.home-link { background: #ebf8ff; color: #2b6cb0; }
+        .ham-page-link.home-link:hover { background: #bee3f8; }
+        .ham-page-link.academic-link { color: #805ad5; background: #faf5ff; }
+        .ham-page-link.academic-link:hover { background: #e9d8fd; }
+        .ham-page-link.pubs-link { color: #2f855a; background: #f0fff4; }
+        .ham-page-link.pubs-link:hover { background: #c6f6d5; }
+        .ham-page-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+        @media (max-width: 768px) {
+            .ham-wrap { top: 10px; left: 10px; }
+            .ham-btn { width: 38px; height: 38px; }
+            .ham-dropdown { min-width: 220px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                {% if session.get('faculty_id') %}
+                    <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('index') }}">Directory</a></li>
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero (compact) -->
+    <section class="hero" style="padding: 2rem 0;">
+        <div class="container">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                {% if faculty.photo %}
+                <img src="{{ url_for('uploaded_file', filename='photos/' + faculty.photo) }}" alt="{{ faculty.full_name }}" style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.2); flex-shrink: 0;">
+                {% else %}
+                <div style="width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 700; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.2);">{{ faculty.full_name[0] }}</div>
+                {% endif %}
+                <div>
+                    <h1 style="font-size: 1.6rem; margin-bottom: 0.25rem;">{{ faculty.full_name }}</h1>
+                    <div class="designation" style="font-size: 1rem;">{{ faculty.designation }}</div>
+                    <div class="department" style="font-size: 0.9rem;">{{ faculty.department }}</div>
+                    {% if faculty.institution %}<div style="opacity: 0.7; font-size: 0.85rem;">{{ faculty.institution }}</div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Hamburger Menu -->
+    <div class="ham-wrap">
+        <button class="ham-btn" onclick="document.getElementById('hamDrop').classList.toggle('open')" aria-label="Menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div class="ham-dropdown" id="hamDrop">
+            <a href="{{ url_for('public_profile', username=faculty.username) }}" class="ham-page-link home-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+                Home
+            </a>
+            <div class="ham-divider"></div>
+            <a href="{{ url_for('public_academic', username=faculty.username) }}" class="ham-page-link academic-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                Academic Profile
+            </a>
+            <div class="ham-divider"></div>
+            <div class="ham-page-link pubs-link" style="cursor: default;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                Publications (current)
+            </div>
+            <div class="ham-divider"></div>
+            <a href="#publications" class="ham-item" onclick="closeMenu()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#805ad5" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                All Publications
+            </a>
+        </div>
+    </div>
+
+    <!-- Publications -->
+    <section class="section" id="publications">
+        <div class="container">
+            <div class="section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#805ad5" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Publications
+                {% if publications %}<span style="color: #a0aec0; font-weight: 400; font-size: 0.85rem;">({{ publications|length }})</span>{% endif %}
+            </div>
+            {% if publications %}
+            {% for p in publications %}
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <h4 style="margin: 0 0 0.35rem 0; color: #1a365d; font-size: 1rem; line-height: 1.5;">{{ p.title }}</h4>
+                {% if p.authors %}<div style="font-size: 0.88rem; color: #718096; margin-bottom: 0.25rem;">{{ p.authors }}</div>{% endif %}
+                <div style="font-size: 0.88rem; color: #4a5568; font-style: italic;">
+                    {{ p.journal }}{% if p.year %}, {{ p.year }}{% endif %}
+                    {% if p.pub_type %}<span style="background: #edf2f7; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-style: normal; margin-left: 0.5rem;">{{ p.pub_type }}</span>{% endif %}
+                </div>
+                {% if p.doi %}<div style="margin-top: 0.35rem;"><a href="{{ p.url or ('https://doi.org/' + p.doi) }}" target="_blank" style="color: #3182ce; font-size: 0.85rem; text-decoration: none;">DOI: {{ p.doi }}</a></div>{% endif %}
+                {% if p.abstract %}
+                <button class="toggle-abstract" onclick="toggleAbstract('abs-{{ p.id }}')">Show Abstract</button>
+                <div class="pub-abstract" id="abs-{{ p.id }}">{{ p.abstract }}</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="text-align: center; padding: 3rem; color: #a0aec0;">
+                <svg style="width:48px;height:48px;margin-bottom:0.75rem;opacity:0.3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                <p style="font-size: 1rem;">No publications listed yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <p>Powered by FacultyConnect</p>
+        </div>
+    </footer>
+
+    <script>
+    function toggleAbstract(id) {
+        var el = document.getElementById(id);
+        el.classList.toggle('show');
+        var btn = el.previousElementSibling;
+        btn.textContent = el.classList.contains('show') ? 'Hide Abstract' : 'Show Abstract';
+    }
+    function closeMenu() {
+        document.getElementById('hamDrop').classList.remove('open');
+    }
+    document.addEventListener('click', function(e) {
+        var wrap = document.querySelector('.ham-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('hamDrop').classList.remove('open');
+        }
+    });
+    </script>
+</body>
+</html>

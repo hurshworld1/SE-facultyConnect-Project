@@ -1,0 +1,110 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'security' %}
+{% block title %}Security Center{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Security Center</h1>
+    <p>Monitor threats, failed logins, and suspicious activity.</p>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value">{{ stats.total_threats }}</div>
+            <div class="stat-label">Total Threats Detected</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value" style="color: #dc2626;">{{ stats.active_threats }}</div>
+            <div class="stat-label">Active Threats</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value" style="color: #dc2626;">{{ stats.critical }}</div>
+            <div class="stat-label">Critical</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-info">
+            <div class="stat-value" style="color: #d97706;">{{ stats.high + stats.medium }}</div>
+            <div class="stat-label">High / Medium</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="card-body" style="padding: 0.75rem 1.25rem;">
+        <form method="GET" class="filter-bar" style="margin: 0;">
+            <select name="severity" class="form-control">
+                <option value="">All Severities</option>
+                <option value="critical" {{ 'selected' if severity_filter == 'critical' }}>Critical</option>
+                <option value="high" {{ 'selected' if severity_filter == 'high' }}>High</option>
+                <option value="medium" {{ 'selected' if severity_filter == 'medium' }}>Medium</option>
+                <option value="low" {{ 'selected' if severity_filter == 'low' }}>Low</option>
+            </select>
+            <select name="status" class="form-control">
+                <option value="">All Status</option>
+                <option value="active" {{ 'selected' if status_filter == 'active' }}>Active</option>
+                <option value="resolved" {{ 'selected' if status_filter == 'resolved' }}>Resolved</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+        </form>
+    </div>
+</div>
+
+<!-- Threats -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header"><h3>Threats</h3></div>
+    {% if threats %}
+    <div class="card-body-compact">
+        {% for t in threats %}
+        <div class="threat-item threat-{{ t.severity }}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <strong style="font-size: 0.88rem; color: #111827;">{{ t.threat_type }}</strong>
+                        <span class="badge badge-{{ 'danger' if t.severity == 'critical' else 'warning' if t.severity == 'high' else 'info' if t.severity == 'medium' else 'neutral' }}">{{ t.severity }}</span>
+                        {% if t.is_resolved %}<span class="badge badge-success">Resolved</span>{% endif %}
+                    </div>
+                    <p style="font-size: 0.85rem; color: #4b5563; margin: 0.25rem 0;">{{ t.description }}</p>
+                    <p style="font-size: 0.78rem; color: #9ca3af; margin: 0;">IP: {{ t.ip_address }} · {{ t.detected_at }}</p>
+                </div>
+                {% if not t.is_resolved %}
+                <form method="POST" action="{{ url_for('platform_resolve_threat', tid=t.id) }}">
+                    <button type="submit" class="btn btn-success btn-xs" onclick="return confirm('Mark this threat as resolved?')">Resolve</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><h3>No threats found</h3><p>No threats match your filters.</p></div>
+    {% endif %}
+</div>
+
+<!-- Failed Logins -->
+<div class="card">
+    <div class="card-header"><h3>Recent Failed Login Attempts</h3></div>
+    {% if failed_logins %}
+    <div class="card-body-compact">
+        {% for fl in failed_logins[:20] %}
+        <div class="activity-item" style="padding: 0.6rem 1.25rem;">
+            <div class="activity-dot" style="background: #dc2626;"></div>
+            <div class="activity-content">
+                <span class="activity-action">{{ fl.action }}</span>
+                {% if fl.details %}<span class="activity-details"> — {{ fl.details }}</span>{% endif %}
+                <div class="activity-time">{{ fl.timestamp }} · {{ fl.ip_address }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><h3>No failed logins</h3></div>
+    {% endif %}
+</div>
+{% endblock %}

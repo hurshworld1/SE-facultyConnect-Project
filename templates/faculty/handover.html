@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Independence Confirmed - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div style="max-width: 750px; margin: 3rem auto; padding: 0 1.5rem;">
+        <div style="background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden;">
+
+            <!-- Header Banner -->
+            <div style="background: linear-gradient(135deg, #276749, #38a169); padding: 2.5rem 2rem; text-align: center; color: white;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">&#10003;</div>
+                <h1 style="font-size: 1.75rem; margin: 0 0 0.5rem 0; color: white;">Independence Confirmed</h1>
+                <p style="opacity: 0.9; font-size: 1rem; margin: 0;">Your profile has been successfully separated from FacultyConnect</p>
+            </div>
+
+            <div style="padding: 2rem;">
+
+                <!-- What Happened -->
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 1.15rem; color: #2d3748; margin-bottom: 0.75rem;">What Has Happened</h2>
+                    <div style="font-size: 0.9rem; color: #4a5568; line-height: 1.8;">
+                        <p>The platform administrator has approved your migration request. Your academic website is now independent.</p>
+                        <ul style="margin-top: 0.75rem; padding-left: 1.5rem;">
+                            <li>Your own private database has been created with all your data</li>
+                            <li>All your qualifications, publications, courses, achievements, students, projects, and announcements are preserved</li>
+                            <li>Your uploaded files (photos, certificates, materials, resume) are included</li>
+                            <li>Your login credentials remain the same</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Your Data -->
+                <div style="margin-bottom: 2rem; background: #f7fafc; border-radius: 8px; padding: 1.25rem; border: 1px solid #e2e8f0;">
+                    <h3 style="font-size: 1rem; color: #2d3748; margin-bottom: 0.5rem;">Your Independent Data</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #edf2f7;">
+                            <span>Database File</span><strong>faculty_{{ faculty_id }}.db</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #edf2f7;">
+                            <span>Type</span><strong>SQLite</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #edf2f7;">
+                            <span>Total Records</span><strong>{{ total_records }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #edf2f7;">
+                            <span>Approved On</span><strong>{{ approved_date }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How to Use Independently -->
+                <div style="margin-bottom: 2rem;">
+                    <h2 style="font-size: 1.15rem; color: #2d3748; margin-bottom: 0.75rem;">How to Manage Independently</h2>
+                    <div style="font-size: 0.9rem; color: #4a5568; line-height: 1.8;">
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #ebf8ff; border-radius: 6px; border-left: 4px solid #3182ce;">
+                            <strong style="color: #2b6cb0;">Step 1: Your Login</strong>
+                            <p style="margin: 0.25rem 0 0 0;">Log in with your existing username and password. Your dashboard now operates on your own database.</p>
+                        </div>
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #ebf8ff; border-radius: 6px; border-left: 4px solid #3182ce;">
+                            <strong style="color: #2b6cb0;">Step 2: Manage Your Content</strong>
+                            <p style="margin: 0.25rem 0 0 0;">Add, edit, or remove qualifications, publications, courses, achievements, students, projects, and announcements. All changes are saved to YOUR database only.</p>
+                        </div>
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #ebf8ff; border-radius: 6px; border-left: 4px solid #3182ce;">
+                            <strong style="color: #2b6cb0;">Step 3: Your Public Profile</strong>
+                            <p style="margin: 0.25rem 0 0 0;">Your public website is live and accessible to students. It reads from your independent database. You control what is visible.</p>
+                        </div>
+                        <div style="margin-bottom: 1rem; padding: 1rem; background: #ebf8ff; border-radius: 6px; border-left: 4px solid #3182ce;">
+                            <strong style="color: #2b6cb0;">Step 4: Export Anytime</strong>
+                            <p style="margin: 0.25rem 0 0 0;">Download a full SQL export of your data from the Database page. Your data belongs to you.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- What the Admin Can No Longer Do -->
+                <div style="margin-bottom: 2rem; padding: 1.25rem; background: #fff5f5; border-radius: 8px; border: 1px solid #fed7d7;">
+                    <h3 style="font-size: 1rem; color: #9b2c2c; margin-bottom: 0.5rem;">Platform Admin No Longer Has Access To</h3>
+                    <ul style="font-size: 0.85rem; color: #9b2c2c; padding-left: 1.5rem; line-height: 1.8;">
+                        <li>Viewing or editing your profile content</li>
+                        <li>Managing your qualifications, publications, or courses</li>
+                        <li>Reading your student messages</li>
+                        <li>Resetting your password</li>
+                        <li>Activating or deactivating your account</li>
+                    </ul>
+                    <p style="font-size: 0.85rem; color: #9b2c2c; margin: 0.75rem 0 0 0;"><strong>The admin retains only:</strong> Your name and registration date in their account records (for platform integrity). No content access.</p>
+                </div>
+
+                <!-- Security Note -->
+                <div style="padding: 1rem; background: #f0fff4; border-radius: 8px; border: 1px solid #c6f6d5; margin-bottom: 1.5rem;">
+                    <p style="font-size: 0.85rem; color: #276749; margin: 0; line-height: 1.7;">
+                        <strong>Security:</strong> Your data is stored in a separate database file. No other faculty member or administrator can read or modify it. Your activity logs are preserved in your own database for your reference.
+                    </p>
+                </div>
+
+                <!-- Actions -->
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="{{ url_for('faculty_dashboard') }}" class="btn btn-primary">Go to Your Dashboard</a>
+                    <a href="{{ url_for('public_profile', username=username) }}" target="_blank" class="btn btn-outline">View Your Public Site</a>
+                    <a href="{{ url_for('manage_database') }}" class="btn btn-outline" style="border-color: #276749; color: #276749;">Database & Export</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

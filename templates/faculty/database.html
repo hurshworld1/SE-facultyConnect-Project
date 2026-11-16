@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        {% set active_page = 'database' %}
+        {% include 'faculty/_sidebar.html' %}
+
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Database Management</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Your data is stored securely on our platform. Export or request migration to your own database.</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <!-- Detached Status -->
+            {% if is_detached %}
+            <div style="background: #c6f6d5; border: 2px solid #276749; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 style="color: #276749; font-size: 1.1rem; margin-bottom: 0.75rem;">Your Profile is Independent</h3>
+                <p style="color: #276749; font-size: 0.9rem; line-height: 1.7; margin-bottom: 1rem;">
+                    Your migration has been approved. Your data has been transferred and you now run independently.
+                    The platform admin no longer has access to your new data. Your archived data on FacultyConnect remains frozen as of the approval date.
+                </p>
+                <div style="background: white; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: #2d3748;">
+                    <strong>What happens now:</strong>
+                    <ul style="margin-top: 0.5rem; padding-left: 1.25rem; line-height: 2;">
+                        <li>Your data is stored in your own independent database (faculty_{{ faculty.id }}.db)</li>
+                        <li>All future changes you make are saved only in your database</li>
+                        <li>The platform admin only has a frozen copy of your data up to the approval date</li>
+                        <li>You can download your full database package at any time</li>
+                        <li>You control everything -- visibility, content, and who can see your data</li>
+                    </ul>
+                </div>
+                <div style="background: white; border-radius: 6px; padding: 1rem; margin-bottom: 1rem; font-size: 0.85rem; color: #2d3748;">
+                    <strong>To set up your own hosting:</strong>
+                    <ol style="margin-top: 0.5rem; padding-left: 1.25rem; line-height: 2;">
+                        <li>Choose a hosting provider (Netlify, Vercel, Heroku, or your university server)</li>
+                        <li>Create an account with the email you provided during migration</li>
+                        <li>Download your SQL export using the button below</li>
+                        <li>Deploy the FacultyConnect app code to your hosting</li>
+                        <li>Import the SQL file into your database on the new server</li>
+                        <li>Update the database connection string in your config</li>
+                        <li>Upload your photos and materials from the uploads folder</li>
+                        <li>Point your custom domain to your new server</li>
+                    </ol>
+                </div>
+                <div style="display: flex; gap: 0.75rem;">
+                    <a href="{{ url_for('public_profile', username=faculty.username) }}" target="_blank" class="btn btn-outline" style="border-color: #276749; color: #276749;">View Your Live Site</a>
+                </div>
+            </div>
+
+            {% elif migration_request and migration_request.status == 'pending' %}
+            <div style="background: #fefcbf; border: 2px solid #d69e2e; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                <h3 style="color: #975a16; font-size: 1rem; margin-bottom: 0.5rem;">Migration Request Pending</h3>
+                <p style="color: #975a16; font-size: 0.85rem; line-height: 1.6;">
+                    Submitted on {{ migration_request.created_at[:10] if migration_request.created_at else 'N/A' }}.
+                    The platform admin will review your request shortly. You will be notified once a decision is made.
+                </p>
+                {% if migration_request.target_email %}
+                <p style="color: #975a16; font-size: 0.85rem; margin-top: 0.5rem;">
+                    <strong>Target email:</strong> {{ migration_request.target_email }} |
+                    <strong>Provider:</strong> {{ migration_request.hosting_provider or 'Not specified' }}
+                </p>
+                {% endif %}
+            </div>
+
+            {% elif migration_request and migration_request.status == 'rejected' %}
+            <div style="background: #fed7d7; border: 2px solid #e53e3e; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                <h3 style="color: #9b2c2c; font-size: 1rem; margin-bottom: 0.5rem;">Migration Request Was Rejected</h3>
+                <p style="color: #9b2c2c; font-size: 0.85rem; line-height: 1.6;">
+                    {% if migration_request.admin_notes %}Admin note: {{ migration_request.admin_notes }}<br>{% endif %}
+                    You may submit a new request if your circumstances have changed.
+                </p>
+            </div>
+            {% endif %}
+
+            <!-- Data Overview -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title">Your Data Summary</h3>
+                </div>
+                <p style="color: #718096; font-size: 0.85rem; margin-bottom: 1rem;">All content you have created on FacultyConnect is listed below.</p>
+                <div class="grid-3">
+                    <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #2b4c7e;">{{ total_records }}</div>
+                        <div style="font-size: 0.85rem; color: #718096;">Total Records</div>
+                    </div>
+                    <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #276749;">{{ db_size_mb }} MB</div>
+                        <div style="font-size: 0.85rem; color: #718096;">Storage Used</div>
+                    </div>
+                    <div style="padding: 1rem; background: #f7fafc; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #2b6cb0;">SQLite</div>
+                        <div style="font-size: 0.85rem; color: #718096;">Database Type</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <h4 style="font-size: 0.95rem; margin-bottom: 0.75rem;">Content Breakdown</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Qualifications</span><strong>{{ stats.qualifications }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Publications</span><strong>{{ stats.publications }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Courses</span><strong>{{ stats.courses }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Course Materials</span><strong>{{ stats.materials }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Achievements</span><strong>{{ stats.achievements }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Students</span><strong>{{ stats.students }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Projects</span><strong>{{ stats.projects }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Announcements</span><strong>{{ stats.announcements }}</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #edf2f7; font-size: 0.9rem;">
+                            <span>Messages</span><strong>{{ stats.messages }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Data -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title">Export Your Data</h3>
+                </div>
+                <p style="color: #718096; font-size: 0.85rem; margin-bottom: 1rem;">
+                    Download a complete SQL file containing all your data. You can use this to set up your own database independently.
+                </p>
+                <form method="POST" action="{{ url_for('manage_database') }}">
+                    <input type="hidden" name="action" value="export_sql">
+                    <button type="submit" class="btn btn-primary">Download SQL Export</button>
+                </form>
+            </div>
+
+            <!-- Request Migration -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title">Request Database Migration</h3>
+                </div>
+                {% if is_detached %}
+                <p style="color: #276749; font-size: 0.85rem;">
+                    Your account is already independent. Your data is fully under your control.
+                </p>
+                {% elif migration_request and migration_request.status == 'pending' %}
+                <p style="color: #975a16; font-size: 0.85rem;">
+                    You have a pending migration request. The admin will review it shortly.
+                </p>
+                {% elif migration_request and migration_request.status == 'rejected' %}
+                <p style="color: #9b2c2c; font-size: 0.85rem; margin-bottom: 1rem;">
+                    Your previous request was rejected. You can submit a new one below.
+                </p>
+                <form method="POST" action="{{ url_for('send_verification_code') }}" style="display: flex; gap: 0.5rem; align-items: flex-end; margin-bottom: 1rem;">
+                    <div style="flex: 1;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Verify Your Email</label>
+                        <input type="email" name="target_email" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="you@university.edu">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap; margin-bottom: 0;">Send Code</button>
+                </form>
+                <form method="POST" action="{{ url_for('manage_database') }}">
+                    <input type="hidden" name="action" value="request_migration">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Email Address *</label>
+                        <input type="email" name="target_email" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="you@university.edu">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Verification Code *</label>
+                        <input type="text" name="verification_code" required maxlength="6" pattern="[0-9]{6}" style="width: 200px; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1.1rem; letter-spacing: 0.2rem; text-align: center;" placeholder="000000">
+                        <p style="font-size: 0.8rem; color: #718096; margin-top: 0.3rem;">Enter the 6-digit code sent to your email.</p>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Reason for Migration</label>
+                        <textarea name="reason" rows="3" style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; resize: vertical; box-sizing: border-box;" placeholder="Why do you want to migrate?"></textarea>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Hosting Provider *</label>
+                        <select name="hosting_provider" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+                            <option value="">Select a provider...</option>
+                            <option value="netlify">Netlify (Free tier)</option>
+                            <option value="vercel">Vercel (Free tier)</option>
+                            <option value="heroku">Heroku</option>
+                            <option value="railway">Railway</option>
+                            <option value="university_server">University Server</option>
+                            <option value="personal_server">Personal Server / VPS</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Custom Domain (optional)</label>
+                        <input type="text" name="custom_domain" style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="professor.youruniversity.edu">
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Submit migration request? Your email will be verified and the admin will review your hosting details.')">Submit Migration Request</button>
+                </form>
+                {% else %}
+                <p style="color: #718096; font-size: 0.85rem; margin-bottom: 1rem;">
+                    Want to host your personal website on your own server? Request a migration.
+                    The admin will review your request and transfer only your data (and nothing else) to you.
+                    A frozen copy of your data remains on FacultyConnect up to the approval date.
+                </p>
+                <div style="background: #f7fafc; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem; font-size: 0.85rem; color: #4a5568;">
+                    <strong>How migration works:</strong>
+                    <ol style="margin-top: 0.5rem; padding-left: 1.25rem; line-height: 1.8;">
+                        <li>Enter your real email address and verify it with a code</li>
+                        <li>Fill in your hosting provider and domain details</li>
+                        <li>Platform admin reviews your request and verifies your hosting setup</li>
+                        <li>Once approved, only your personal data is packaged and transferred</li>
+                        <li>No other faculty data or platform data is included -- only yours</li>
+                        <li>FacultyConnect retains a frozen snapshot up to the approval date</li>
+                        <li>After approval, all your new activity stays in YOUR database only</li>
+                        <li>The admin can no longer access, modify, or view your live data</li>
+                    </ol>
+                </div>
+
+                <!-- Step 1: Email Verification -->
+                <div style="background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem;">
+                    <h4 style="font-size: 0.95rem; color: #2b6cb0; margin-bottom: 0.75rem;">Step 1: Verify Your Email</h4>
+                    <p style="font-size: 0.85rem; color: #4a5568; margin-bottom: 0.75rem;">
+                        Enter the email address you want to use for your independent account. We will send you a verification code to confirm you own this email.
+                    </p>
+                    <form method="POST" action="{{ url_for('send_verification_code') }}" style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                        <div style="flex: 1;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Your Email Address *</label>
+                            <input type="email" name="target_email" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="you@university.edu">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="white-space: nowrap; margin-bottom: 0;">Send Verification Code</button>
+                    </form>
+                </div>
+
+                <!-- Step 2: Fill Details and Submit -->
+                <form method="POST" action="{{ url_for('manage_database') }}">
+                    <input type="hidden" name="action" value="request_migration">
+                    <div style="background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.25rem;">
+                        <h4 style="font-size: 0.95rem; color: #276749; margin-bottom: 0.75rem;">Step 2: Enter Verification Code & Details</h4>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Email Address (must match Step 1) *</label>
+                            <input type="email" name="target_email" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="you@university.edu">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Verification Code *</label>
+                            <input type="text" name="verification_code" required maxlength="6" pattern="[0-9]{6}" style="width: 200px; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 1.1rem; letter-spacing: 0.2rem; text-align: center;" placeholder="000000">
+                            <p style="font-size: 0.8rem; color: #718096; margin-top: 0.3rem;">Enter the 6-digit code sent to your email. Valid for 15 minutes.</p>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Reason for Migration (optional)</label>
+                        <textarea name="reason" rows="3" style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; resize: vertical; box-sizing: border-box;" placeholder="Why do you want to migrate to your own database?"></textarea>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Hosting Provider *</label>
+                        <select name="hosting_provider" required style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+                            <option value="">Select a provider...</option>
+                            <option value="netlify">Netlify (Free tier)</option>
+                            <option value="vercel">Vercel (Free tier)</option>
+                            <option value="heroku">Heroku</option>
+                            <option value="railway">Railway</option>
+                            <option value="university_server">University Server</option>
+                            <option value="personal_server">Personal Server / VPS</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Hosting Plan (optional)</label>
+                        <input type="text" name="hosting_plan" style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="e.g. Free, Hobby, Pro...">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.85rem;">Custom Domain (optional)</label>
+                        <input type="text" name="custom_domain" style="width: 100%; padding: 0.6rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" placeholder="professor.youruniversity.edu">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;" onclick="return confirm('Submit migration request? Your email will be verified and the admin will review your hosting details.')">Submit Migration Request</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Privacy Note -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Data & Privacy</h3>
+                </div>
+                <div style="font-size: 0.85rem; color: #4a5568; line-height: 1.8;">
+                    <p><strong>Your data stays with us</strong> until you choose to migrate. We keep a record of all accounts created on FacultyConnect for platform integrity.</p>
+                    <p style="margin-top: 0.5rem;"><strong>Your public profile</strong> shows only the information you choose to publish. Other users cannot see that you created your website through this platform.</p>
+                    <p style="margin-top: 0.5rem;"><strong>After migration</strong>, only a frozen snapshot of your data (up to the approval date) remains on FacultyConnect. All new activity is stored exclusively in your own database.</p>
+                    <p style="margin-top: 0.5rem;"><strong>Platform administrators</strong> can view your archived data for security monitoring but cannot access or modify your live independent database.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

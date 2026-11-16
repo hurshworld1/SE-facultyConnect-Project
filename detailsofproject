@@ -1,0 +1,718 @@
+# FacultyConnect — Complete Project Documentation
+
+## Table of Contents
+
+1. Introduction
+2. Motivation & Problem Statement
+3. Societal Impact
+4. Target Audience
+5. System Architecture
+6. Core Features
+7. Faculty Dashboard Features
+8. Public Profile System
+9. Platform Administration
+10. Data Ownership & Migration
+11. Security & Threat Detection
+12. Database Schema
+13. Technology Stack
+14. Unique Selling Points
+15. Project Limitations
+16. Future Scope
+17. Project Structure
+
+---
+
+## 1. Introduction
+
+FacultyConnect is a web-based platform that enables faculty members to create, manage, and publish their own professional academic websites from a single centralized system. Each faculty member gets a personal dashboard to manage their academic profile, research, publications, courses, and student interactions — while the platform provides a public-facing website for each faculty member that can be shared with students, colleagues, and the broader academic community.
+
+The platform is built on the principle of **data ownership** — faculty members are never permanently locked into the system. They can export their academic data at any time and migrate to their own independent hosting if they choose. This philosophical commitment to data portability distinguishes FacultyConnect from conventional institutional platforms.
+
+FacultyConnect operates as a multi-tenant system where each faculty member's data is stored independently, with both a shared platform database and optional per-faculty independent databases for detached users. The system includes a comprehensive platform administration console for monitoring, managing, and securing the entire platform.
+
+---
+
+## 2. Motivation & Problem Statement
+
+Faculty members in universities and research institutions face several persistent challenges in maintaining their online academic presence:
+
+**Lack of Technical Expertise:** Most faculty members do not have the skills or time to build and maintain a personal website. Setting up hosting, managing domains, and updating content regularly is a burden that falls outside their core academic responsibilities.
+
+**Scattered Information:** A faculty member's academic profile is typically spread across multiple platforms — university websites, Google Scholar, ResearchGate, LinkedIn, personal blogs, and departmental pages. Students and collaborators often struggle to find a single, authoritative source of information.
+
+**Platform Lock-in:** Many existing academic networking platforms (ResearchGate, Academia.edu, Google Scholar) do not allow easy data export. Faculty members who build their profiles on these platforms risk losing their content if the platform changes its terms, shuts down, or the faculty member wants to leave.
+
+**Institutional Limitations:** University-mandated faculty pages are often rigid templates with minimal customization. Faculty cannot control what information is displayed, how it is organized, or how their public profile looks.
+
+**Student Accessibility:** Students frequently need quick access to faculty office hours, course schedules, published materials, and contact information. Without a centralized, well-morganized source, this information is hard to find.
+
+FacultyConnect addresses all of these problems by providing a purpose-built platform that combines ease of use, professional presentation, and guaranteed data portability.
+
+---
+
+## 3. Societal Impact
+
+**Democratizing Academic Presence:** FacultyConnect gives every faculty member — regardless of their technical skill or institutional resources — the ability to have a professional online presence. This is particularly valuable for faculty at smaller institutions or in developing regions where dedicated web infrastructure may not exist.
+
+**Improving Student-Faculty Communication:** By providing students with a single, reliable source for faculty information — office hours, course materials, announcements, and contact details — FacultyConnect reduces friction in the student-faculty relationship. Students spend less time searching for basic information and more time engaging with their coursework and research.
+
+**Promoting Data Sovereignty:** The platform's commitment to data ownership sends a broader message about digital rights in academia. Faculty members should not have to sacrifice control of their professional identity to use a digital platform. FacultyConnect demonstrates that convenience and data sovereignty can coexist.
+
+**Supporting Academic Collaboration:** When faculty profiles are well-organized and publicly accessible, it becomes easier for researchers across institutions to find collaborators with complementary expertise. The publications and research interests sections of FacultyConnect profiles serve as discoverable nodes in the academic network.
+
+**Reducing Institutional Burden:** Universities benefit from FacultyConnect because it reduces the need for centralized IT teams to build and maintain individual faculty websites. Faculty can self-serve, while administrators retain oversight through the platform's admin console.
+
+**Knowledge Preservation:** By structuring academic data in a portable, exportable format, FacultyConnect ensures that faculty achievements, publications, and educational materials are not lost when faculty members change institutions or retire.
+
+---
+
+## 4. Target Audience
+
+**Primary Users — Faculty Members:**
+- University and college professors
+- Research scientists at academic institutions
+- Adjunct faculty and lecturers
+- Post-doctoral researchers with teaching responsibilities
+- Faculty at any career stage who want a professional online presence
+
+**Secondary Users — Students:**
+- Undergraduate students looking up faculty for courses, office hours, or research opportunities
+- Graduate students seeking potential advisors
+- Students accessing course materials, lecture notes, and announcements
+
+**Tertiary Users — Platform Administrators:**
+- University IT administrators monitoring the platform
+- Department heads overseeing faculty profiles
+- Platform operators managing the FacultyConnect service
+
+**Other Stakeholders:**
+- Research collaborators looking for faculty expertise
+- Conference organizers verifying faculty credentials
+- Prospective students researching faculty before applying to programs
+
+---
+
+## 5. System Architecture
+
+FacultyConnect follows a monolithic Flask application architecture with the following key components:
+
+**Application Layer (app.py):**
+The single Python file contains all routes, business logic, authentication, database management, file handling, and threat detection. This approach was chosen for simplicity and ease of deployment.
+
+**Database Layer (SQLite):**
+- **Platform Database (faculty.db):** Stores all faculty accounts, content, messages, activity logs, threats, migration requests, and platform admin accounts.
+- **Independent Databases (faculty_{id}.db):** Created when a faculty member's migration request is approved. Contains a complete copy of their data, enabling them to host their site independently.
+
+**File Storage (uploads/):**
+Organized into subdirectories: photos/, resumes/, certificates/, materials/, documents/. Each file gets a unique hex-prefixed name to prevent conflicts.
+
+**Template Layer (templates/):**
+Organized into three directories:
+- templates/ — Public-facing pages (index, login, register, public_profile, etc.)
+- templates/faculty/ — Faculty dashboard pages (dashboard, edit_profile, manage_*, etc.)
+- templates/platform/ — Platform admin pages (dashboard, faculty_list, security, etc.)
+
+**Static Assets (static/):**
+- static/css/style.css — Main stylesheet for public and faculty pages
+- static/css/admin.css — Dedicated stylesheet for the platform admin panel
+
+### Request Flow
+1. User visits a URL
+2. Flask routes the request to the appropriate handler
+3. Handler queries the database (platform DB or independent DB based on session)
+4. Handler renders the Jinja2 template with data
+5. Response is sent to the browser
+
+### Authentication Flow
+- Faculty: Session-based authentication with `session['faculty_id']`
+- Admin: Session-based authentication with `session['admin_id']`
+- Support sessions: Admin temporarily assumes a faculty identity (logged and audited)
+
+---
+
+## 6. Core Features
+
+### Faculty Registration & Authentication
+- Email-based registration with password hashing (werkzeug.security)
+- Secure session management with configurable timeout
+- Password change functionality with current password verification
+- Account status management (active/inactive) controlled by admin
+
+### Content Management
+Every content type follows a consistent pattern:
+- **Create** — Add new content through forms
+- **Read** — View content in organized layouts
+- **Update** — Edit existing content
+- **Delete** — Remove content with confirmation
+- **Toggle visibility** — Switch between published (public) and draft (private)
+
+Content types include: Qualifications, Research Interests, Achievements, Publications, Courses, Course Materials, Research Students, Projects, Announcements, Messages, and Resources (standalone PDFs/videos).
+
+### File Upload System
+- Supports images (PNG, JPG, GIF, WebP), documents (PDF, DOC, DOCX), presentations (PPT, PPTX), code files, and video formats (MP4, WebM, AVI, MOV, MKV)
+- Maximum upload size: 100 MB (configurable)
+- Automatic filename deduplication using hex tokens
+- Organized storage in categorized subdirectories
+
+### Notification System
+- Flash messages for user feedback (success, danger, warning, info)
+- Auto-dismissing flash messages in the admin panel
+- Confirmation dialogs for destructive actions
+
+---
+
+## 7. Faculty Dashboard Features
+
+### Profile Management
+- Full profile editing (name, designation, department, institution, bio, contact info)
+- Profile photo upload and removal
+- Resume/CV upload and removal
+- Online profiles (Google Scholar, LinkedIn, GitHub)
+- Real-time preview of public profile
+
+### Academic Content Management
+Each section has its own management page with add/edit/delete/toggle functionality:
+
+- **Qualifications:** Degree, specialization, university, year, certificate photo upload
+- **Research Interests:** Title and description with visibility control
+- **Achievements & Awards:** Title, description, category, year, certificate photo
+- **Publications:** Title, authors, journal, year, DOI, URL, abstract, type classification
+- **Courses:** Name, code, description, semester, schedule
+- **Course Materials:** File upload per course with title and description
+- **Research Students:** Name, program, research topic, status, start year, email
+- **Projects:** Title, description, funding agency, amount, status, timeline
+- **Announcements:** Title, content, importance flag, publish status
+
+### Data & Migration
+- View all content data with counts
+- Export complete academic data as SQL dump
+- Request migration to independent hosting
+- Email verification for migration requests
+- Migration status tracking
+
+### Communication
+- Student message inbox with read/unread status
+- Message details with sender information
+- Quick reply capability
+
+### Dashboard Views
+- **Dashboard view:** Teaching and communication essentials
+- **Academic Details view:** Research, qualifications, achievements, students, projects
+
+### Resources (PDFs, Videos)
+- Upload standalone resources (PDFs, lecture notes, video files)
+- Support for YouTube video URLs with embedded player
+- Resource type classification (pdf, video, ppt, doc, notes, assignment)
+- Visibility toggle for published/draft status
+
+---
+
+## 8. Public Profile System
+
+### Three-Page Architecture
+Each faculty member's public presence is split into three separate pages:
+
+1. **Home Page** — Student essentials: announcements, courses, materials, videos, PDFs, contact form
+2. **Academic Profile** — Faculty-focused content: about, research, education, achievements, students, projects
+3. **Publications** — Complete publication list with abstracts and DOI links
+
+### Navigation
+- Hamburger menu (☰) in the top-left corner on all three pages
+- Each page shows section links relevant to that page
+- Cross-page navigation links at the bottom of the menu
+- Current page indicated with "(current)" label
+
+### Home Page Sections
+- Announcements & Updates (with importance badges)
+- Courses & Schedule (with "View Materials" links)
+- Study Materials, PDFs & Notes (with file type badges and download buttons)
+- Lecture Videos (embedded YouTube + uploaded video player)
+- PDFs, Notes & Documents (with file type classification)
+- Contact & Office (email, phone, office, hours, address + contact form)
+
+### Academic Profile Sections
+- About (bio)
+- Research Interests (tags + detail cards)
+- Education & Qualifications (card grid with certificate thumbnails)
+- Achievements & Awards (grid with category badges)
+- Research Students (table with status indicators)
+- Research Projects (with funding and status details)
+
+### Publications Page
+- Complete publication list
+- Authors, journal, year, type classification
+- DOI links
+- Expandable abstracts
+- Empty state for no publications
+
+### Hero Section
+- Profile photo or initial avatar
+- Name, designation, department, institution
+- Action buttons: Email, Scholar, LinkedIn, GitHub, Resume
+- Independent Site badge for migrated faculty
+
+---
+
+## 9. Platform Administration
+
+### Admin Console Architecture
+The admin panel uses a persistent sidebar layout with dedicated CSS (`admin.css`) and a base template (`base_admin.html`) that all admin pages extend.
+
+### Sections
+
+**Command Center:**
+- Key statistics (total faculty, active, threats, pending migrations)
+- Needs attention panel with actionable items
+- Security status overview
+- Recent activity feed
+- Quick action links
+
+**Faculty Operations:**
+- Searchable, filterable faculty list
+- Filters: name, department, status (active/inactive/detached)
+- Individual faculty detail pages with tabbed views
+- Admin actions: activate/deactivate, reset password, view public site
+
+**Public Websites Management:**
+- Monitor all faculty public websites
+- Profile completeness tracking
+- Search and filter by status
+
+**Data & Migration Center:**
+- Data inventory (publications, courses, materials, etc.)
+- Migration request management (approve/reject with admin password confirmation)
+- Storage usage tracking
+- Independent database monitoring
+
+**Security Center:**
+- Threat list with severity classification (critical/high/medium/low)
+- Failed login attempt tracking
+- Threat resolution workflow
+- Filter by severity and status
+
+**Audit Logs:**
+- Complete activity log with filtering
+- Actor identification (faculty, platform_admin)
+- Action details, timestamps, IP addresses
+- Pagination for large datasets
+
+**Admins & Roles:**
+- Four role levels: Super Admin, Platform Admin, Support, Read-Only
+- Permission matrix documentation
+- Add/delete admin accounts
+- Role change with real-time updates
+
+**Platform Analytics:**
+- Faculty registration growth by month
+- Content breakdown (publications, courses, materials, etc.)
+- Activity trends over 30 days
+- Top platform actions
+- Profile completion metrics
+
+**System Health:**
+- Database status and size
+- Authentication system status
+- Table health monitoring
+- Upload storage usage
+- Independent database tracking
+
+**Backups & Recovery:**
+- Manual backup creation (copies database file)
+- Backup history with status tracking
+- Database size monitoring
+- File integrity logging
+
+**Platform Settings:**
+- General (platform name)
+- Registration (enable/disable, require approval)
+- File management (max upload size, default visibility)
+- Security (session timeout, password requirements)
+- Maintenance mode
+
+**Support / View-as-Faculty:**
+- Admin can temporarily view the platform as a faculty member
+- Requires reason documentation
+- Session start/end audited
+- Exit button to return to admin view
+
+---
+
+## 10. Data Ownership & Migration
+
+### Philosophy
+FacultyConnect is built on the principle that faculty members own their data. The platform is a service, not a prison. Faculty can leave at any time with their complete academic data.
+
+### Export System
+Faculty can export their complete academic data as a SQL dump file containing:
+- Profile information
+- Qualifications
+- Research interests
+- Achievements
+- Publications
+- Courses and course materials
+- Research students
+- Projects
+- Announcements
+- Resources
+
+The export is faculty-specific — only the requesting faculty member's data is included.
+
+### Migration Process
+1. Faculty member requests migration through the Data & Migration page
+2. They provide email verification (6-digit code sent to their email)
+3. They specify hosting details (provider, plan, custom domain)
+4. Platform admin reviews the request
+5. Admin approves or rejects with mandatory password confirmation and optional notes
+6. On approval:
+   - Faculty member's `is_detached` flag is set to 1
+   - An independent database (`faculty_{id}.db`) is created with all their data
+   - Faculty can now host their site independently
+7. On rejection:
+   - Faculty member is notified
+   - Their account remains on the platform
+
+### Independent Database
+When a faculty member is detached, their independent database contains:
+- Complete schema (all tables except platform_admins, threats)
+- All faculty content data
+- Activity logs for their account
+- The database file can be downloaded and used with any SQLite-compatible system
+
+### Data Portability
+- All data is stored in standard SQLite format
+- SQL dumps are human-readable and portable
+- No proprietary data formats
+- No vendor lock-in mechanisms
+
+---
+
+## 11. Security & Threat Detection
+
+### Threat Detection System
+FacultyConnect includes an automated threat detection system that scans incoming requests for known attack patterns:
+
+- **XSS (Cross-Site Scripting):** Detects `<script>` tags, `javascript:` URIs, and inline event handlers
+- **SQL Injection:** Detects `UNION SELECT`, `DROP TABLE`, and `DELETE` statements
+- **Path Traversal:** Detects `../` sequences in file paths
+- **Brute Force:** Monitors for repeated login failures
+
+### Security Architecture
+- Passwords are hashed using werkzeug's `generate_password_hash` (scrypt-based)
+- Sessions are managed server-side with configurable timeouts
+- Admin actions require password confirmation for sensitive operations
+- All admin actions are logged with timestamps and IP addresses
+- Threat detection runs on every incoming request
+- Failed login attempts are tracked and logged
+
+### Admin Security Features
+- Admin password required for: password resets, migration approvals
+- Session-based admin authentication separate from faculty authentication
+- Support sessions are logged with reasons and timestamps
+- Role-based access control for admin operations
+- Automatic session expiration
+
+### Activity Logging
+Every significant action is logged with:
+- **Who:** User type (faculty, platform_admin, guest) and ID
+- **What:** Action type (login, content_add, content_delete, etc.)
+- **Details:** Description of what happened
+- **When:** Timestamp
+- **Where:** IP address
+
+---
+
+## 12. Database Schema
+
+### Core Tables
+
+**faculty** — Faculty member accounts and profile data
+- id, email, password_hash, full_name, username, designation, department, institution
+- phone, office_location, office_hours, visiting_hours, address, bio, research_summary
+- photo, resume_file, website, google_scholar, linkedin, github
+- is_active, is_detached, detached_at, created_at
+
+**platform_admins** — Administrator accounts
+- id, username, password_hash, role, created_at
+
+**qualifications** — Academic qualifications
+- id, faculty_id, degree, specialization, university, year_of_passing, certificate_photo, is_published
+
+**research_interests** — Research areas
+- id, faculty_id, title, description, is_published
+
+**achievements** — Awards and achievements
+- id, faculty_id, title, description, category, year, certificate_photo, is_published
+
+**publications** — Academic publications
+- id, faculty_id, title, authors, journal, year, doi, url, abstract, pub_type, is_published
+
+**courses** — Taught courses
+- id, faculty_id, name, code, description, semester, schedule, is_published
+
+**course_materials** — Uploaded course files
+- id, course_id, faculty_id, title, file_path, file_type, description, uploaded_at
+
+**students** — Research students
+- id, faculty_id, name, program, research_topic, status, start_year, email, is_published
+
+**projects** — Research projects
+- id, faculty_id, title, description, funding_agency, amount, status, start_year, end_year, is_published
+
+**announcements** — Faculty announcements
+- id, faculty_id, title, content, is_important, is_published, created_at
+
+**messages** — Student contact form submissions
+- id, faculty_id, sender_name, sender_email, subject, message, is_read, created_at
+
+**resources** — Standalone PDFs and videos
+- id, faculty_id, title, description, resource_type, file_path, url, is_published, created_at
+
+**activity_logs** — Audit trail
+- id, user_type, user_id, action, details, ip_address, timestamp
+
+**threats** — Security threat detections
+- id, threat_type, description, ip_address, severity, is_resolved, detected_at
+
+**migration_requests** — Migration applications
+- id, faculty_id, status, reason, target_email, hosting_provider, hosting_plan, custom_domain, admin_notes, reviewed_by, created_at, reviewed_at
+
+**verification_codes** — Email verification for migrations
+- id, faculty_id, email, code, purpose, is_used, expires_at, created_at
+
+**backup_history** — Backup records
+- id, backup_type, file_path, file_size, status, created_by, notes, created_at
+
+**platform_settings** — Key-value configuration store
+- key, value
+
+### Design Principles
+- All content tables have `is_published` for draft/publish control
+- `faculty_id` foreign key on all content tables
+- `ON DELETE CASCADE` ensures data cleanup
+- Timestamps on all records for audit purposes
+- Independent database copies preserve all IDs for referential integrity
+
+---
+
+## 13. Technology Stack
+
+**Backend:**
+- Python 3.13
+- Flask (web framework)
+- SQLite (database)
+- werkzeug (password hashing, file uploads, WSGI utilities)
+- Jinja2 (templating, included with Flask)
+
+**Frontend:**
+- HTML5
+- CSS3 (custom properties, grid, flexbox, transitions)
+- Vanilla JavaScript (no frameworks)
+- SVG icons (inline)
+
+**No external JavaScript frameworks or libraries are used.** The frontend is built entirely with vanilla HTML, CSS, and JavaScript for maximum simplicity and zero dependency management.
+
+**Deployment:**
+- Render.com compatible (render.yaml present)
+- Self-contained — single Python file with SQLite
+- No external database server required
+- No Redis, Celery, or background workers needed
+
+---
+
+## 14. Unique Selling Points
+
+### 1. Data Ownership & Portability
+Unlike platforms like ResearchGate or Academia.edu, FacultyConnect guarantees that faculty own their data. They can export everything as a standard SQL dump and migrate to independent hosting at any time. The platform actively facilitates departure rather than preventing it.
+
+### 2. Self-Service Faculty Websites
+Each faculty member gets a fully functional, professionally designed personal website without any technical knowledge. The platform handles hosting, database management, file storage, and security — faculty just fill in their information.
+
+### 3. Multi-Page Public Profile
+The public profile is split into three purpose-built pages (Home, Academic Profile, Publications) rather than cramming everything into one page. This provides a better experience for different visitor types — students visiting for course info vs. researchers looking for publications.
+
+### 4. Embedded Video Support
+Faculty can upload lecture videos directly or embed YouTube videos. The public profile renders these as inline players, not external links. This keeps students on the faculty's page.
+
+### 5. Integrated Migration System
+The migration workflow includes email verification, hosting detail collection, admin review with mandatory password confirmation, and automatic independent database creation. This is a complete, functional migration pipeline — not just a download button.
+
+### 6. Automated Threat Detection
+Built-in detection for XSS, SQL injection, path traversal, and brute force attacks — running on every request without requiring external security tools.
+
+### 7. Role-Based Admin Console
+Four admin roles (Super Admin, Platform Admin, Support, Read-Only) with a documented permission matrix. The admin panel is a complete SaaS-style operations console, not a basic CRUD interface.
+
+### 8. Zero External Dependencies
+No JavaScript frameworks, no CSS libraries, no database server, no Redis, no background workers. The entire application runs as a single Python process with SQLite.
+
+### 9. Support Session Capability
+Admins can temporarily view the platform as any faculty member for troubleshooting — with full audit logging, reason documentation, and a clear exit mechanism.
+
+### 10. Consistent Content Management Pattern
+Every content type (qualifications, publications, courses, etc.) follows the same CRUD + toggle visibility pattern, making the system predictable and easy to extend.
+
+---
+
+## 15. Project Limitations
+
+### Current Limitations
+
+**Scalability:**
+SQLite is suitable for hundreds to low thousands of faculty members but would need to be replaced with PostgreSQL or MySQL for larger deployments. The single-file architecture (app.py) would benefit from being split into modules for larger teams.
+
+**Real-Time Features:**
+There are no real-time notifications, WebSocket connections, or live updates. Message notifications require page refresh. A production system would benefit from Server-Sent Events or WebSockets for instant notifications.
+
+**Email Integration:**
+Verification codes are displayed in flash messages (demo mode) rather than actually being sent via email. A production deployment would need SMTP or transactional email service integration (SendGrid, Mailgun, etc.).
+
+**File Storage:**
+Files are stored on the local filesystem. A production system should use cloud storage (AWS S3, Google Cloud Storage) for reliability, scalability, and CDN delivery.
+
+**Search:**
+Faculty search uses basic SQL LIKE queries. A production system with many faculty members would benefit from full-text search (Elasticsearch, Meilisearch, or SQLite FTS5).
+
+**Testing:**
+There are no automated tests (unit tests, integration tests, end-to-end tests). A production system should have comprehensive test coverage.
+
+**API:**
+There is no REST API. All interaction is through server-rendered HTML. A mobile app or third-party integrations would require an API layer.
+
+**Caching:**
+There is no caching layer (Redis, Memcached). Repeated database queries for the same data could be optimized with caching.
+
+**Rate Limiting:**
+Login attempt protection is detection-based (logged as threats) but does not actually block IPs or accounts after repeated failures. A production system should implement actual rate limiting.
+
+**Multi-Admin Support:**
+The admin system supports multiple admins but does not have granular per-section permissions implemented in code (only the role column and a documented permission matrix). Full RBAC enforcement would require decorator modifications.
+
+**Video Upload Size:**
+While the max upload is set to 100 MB, uploaded video files are served directly from the filesystem. Large video files would benefit from streaming and CDN delivery.
+
+**Backup Automation:**
+Backups are manual only. There is no scheduled/automated backup system. A production system should run daily backups automatically.
+
+**Mobile App:**
+There is no native mobile application. The web interface is responsive but a dedicated app could provide push notifications and offline access.
+
+**Accessibility:**
+The UI follows general accessibility practices but has not been audited against WCAG 2.1 AA standards. Keyboard navigation and screen reader support could be improved.
+
+---
+
+## 16. Future Scope
+
+### Short-Term Improvements
+- Email integration for verification codes and notifications
+- Automated daily backups
+- Rate limiting for login attempts
+- Full-text search for faculty and content
+- REST API for mobile app development
+- Unit and integration test coverage
+- WCAG 2.1 accessibility audit
+
+### Medium-Term Features
+- Two-factor authentication (TOTP/SMS)
+- Faculty analytics (profile views, material downloads)
+- Course enrollment and student portal
+- Collaborative publication management
+- Calendar integration for office hours and deadlines
+- Bulk data import for migrating from other platforms
+- Custom domain support for faculty profiles
+- SSL/TLS certificate management
+
+### Long-Term Vision
+- Multi-institution deployment with federated identity
+- AI-powered profile completion suggestions
+- Integration with university LMS systems (Moodle, Canvas)
+- Research collaboration matching
+- Conference and event management
+- Automated publication indexing from DOI databases
+- Student feedback and course evaluation system
+
+---
+
+## 17. Project Structure
+
+```
+facultyconnect/
+├── app.py                          # Main application (routes, logic, database)
+├── seed.py                         # Database seeder with sample data
+├── run.py                          # Application entry point
+├── faculty.db                      # Platform SQLite database
+├── render.yaml                     # Render.com deployment config
+├── requirements.txt                # Python dependencies
+├── detailsofproject                # This documentation file
+├── README.md                       # Project README
+├── .gitignore
+├── faculty_*.db                    # Independent databases (per faculty)
+├── uploads/
+│   ├── photos/                     # Faculty profile photos
+│   ├── resumes/                    # Faculty resume/CV files
+│   ├── certificates/               # Qualification and achievement certificates
+│   ├── materials/                  # Course materials and resources
+│   └── documents/                  # General document uploads
+├── backups/                        # Database backups
+├── static/
+│   ├── css/
+│   │   ├── style.css              # Main stylesheet (public + faculty)
+│   │   └── admin.css              # Admin panel stylesheet
+│   └── uploads/
+│       └── .gitkeep
+├── templates/
+│   ├── index.html                  # Landing page
+│   ├── login.html                  # Faculty login
+│   ├── register.html               # Faculty registration
+│   ├── 404.html                    # Not found page
+│   ├── 500.html                    # Server error page
+│   ├── public_profile.html         # Faculty public profile (Home)
+│   ├── public_academic.html        # Faculty academic profile page
+│   ├── public_publications.html    # Faculty publications page
+│   ├── course_detail.html          # Individual course view
+│   ├── faculty/
+│   │   ├── _sidebar.html           # Faculty dashboard sidebar
+│   │   ├── dashboard.html          # Faculty dashboard
+│   │   ├── edit_profile.html       # Profile editor
+│   │   ├── change_password.html    # Password change
+│   │   ├── database.html           # Data & migration page
+│   │   ├── academic_details.html   # Academic details page
+│   │   ├── handover.html           # Post-migration handover
+│   │   ├── manage_qualifications.html
+│   │   ├── manage_research.html
+│   │   ├── manage_achievements.html
+│   │   ├── manage_publications.html
+│   │   ├── manage_courses.html
+│   │   ├── manage_materials.html
+│   │   ├── manage_students.html
+│   │   ├── manage_projects.html
+│   │   ├── manage_announcements.html
+│   │   ├── manage_resources.html
+│   │   └── view_messages.html
+│   └── platform/
+│       ├── base_admin.html         # Admin base template (sidebar + topbar)
+│       ├── login.html              # Admin login
+│       ├── dashboard.html          # Command Center
+│       ├── faculty_list.html       # Faculty Operations
+│       ├── user_detail.html        # Faculty detail view
+│       ├── websites.html           # Public Websites management
+│       ├── data_migration.html     # Data & Migration Center
+│       ├── security.html           # Security Center
+│       ├── analytics.html          # Platform Analytics
+│       ├── health.html             # System Health
+│       ├── backups.html            # Backup & Recovery
+│       ├── admins.html             # Admins & Roles
+│       ├── settings.html           # Platform Settings
+│       ├── activity.html           # Audit Logs
+│       ├── threats.html            # Threat Detection
+│       ├── faculty_activity.html   # Faculty-specific activity
+│       ├── migration_requests.html # Migration request list
+│       ├── review_migration.html   # Migration review page
+│       └── reset_password_confirm.html
+└── .freebuff/
+    └── project-id
+```
+
+---
+
+*FacultyConnect — Faculty-owned academic web presence with guaranteed data portability.*

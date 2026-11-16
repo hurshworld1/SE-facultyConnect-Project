@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Resources - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .resource-item {
+            display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem;
+            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            margin-bottom: 0.75rem; transition: all 0.15s;
+        }
+        .resource-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .resource-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .resource-icon svg { width: 22px; height: 22px; }
+        .resource-actions { display: flex; gap: 0.5rem; margin-left: auto; flex-shrink: 0; }
+        .resource-actions button, .resource-actions a {
+            width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e2e8f0;
+            background: white; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s; text-decoration: none; color: #718096;
+        }
+        .resource-actions button:hover, .resource-actions a:hover { background: #f7fafc; border-color: #cbd5e0; }
+        .resource-actions .delete-btn:hover { background: #fff5f5; border-color: #feb2b2; color: #e53e3e; }
+        .type-badge {
+            display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px;
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+        }
+        .type-pdf { background: #fff5f5; color: #e53e3e; }
+        .type-video { background: #faf5ff; color: #805ad5; }
+        .type-ppt { background: #ebf8ff; color: #3182ce; }
+        .type-doc { background: #f0fff4; color: #38a169; }
+        .type-other { background: #edf2f7; color: #718096; }
+        .visibility-on { color: #38a169; }
+        .visibility-off { color: #a0aec0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a>
+            <ul class="navbar-nav">
+                <li><a href="{{ url_for('faculty_dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('logout') }}">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-layout">
+        {% set active_page = 'resources' %}
+        {% include 'faculty/_sidebar.html' %}
+
+        <main class="dashboard-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+                <div>
+                    <h2 style="font-size: 1.3rem; font-weight: 700; color: #1a365d; margin: 0;">Resources (PDFs, Videos & Files)</h2>
+                    <p style="font-size: 0.85rem; color: #718096; margin: 0.25rem 0 0 0;">Upload study materials, lecture videos, notes, and assignments for students</p>
+                </div>
+                <span style="background: #ebf8ff; color: #2b6cb0; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">{{ items|length }} resources</span>
+            </div>
+
+            <!-- Add Resource Form -->
+            <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1rem; font-weight: 700; color: #2d3748; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg style="width:18px;height:18px;color:#3182ce;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Add New Resource
+                </h3>
+                <form method="POST" action="{{ url_for('manage_resources') }}" enctype="multipart/form-data" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #4a5568;">Title *</label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Lecture 5 - Data Structures Notes" required style="margin-top: 0.3rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #4a5568;">Description</label>
+                        <input type="text" name="description" class="form-control" placeholder="Brief description (optional)" style="margin-top: 0.3rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #4a5568;">Resource Type</label>
+                        <select name="resource_type" class="form-control" style="margin-top: 0.3rem;">
+                            <option value="pdf">PDF Document</option>
+                            <option value="video">Video (link)</option>
+                            <option value="ppt">Presentation (PPT/PPTX)</option>
+                            <option value="doc">Document (DOC/DOCX)</option>
+                            <option value="notes">Lecture Notes</option>
+                            <option value="assignment">Assignment</option>
+                            <option value="other">Other File</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #4a5568;">Upload File</label>
+                        <input type="file" name="file" class="form-control" accept=".pdf,.ppt,.pptx,.doc,.docx,.zip,.txt,.mp4,.webm,.avi,.mov,.mkv,.ipynb,.py,.java,.cpp,.c,.html,.css,.js" style="margin-top: 0.3rem;">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: #4a5568;">Or Video URL</label>
+                        <input type="url" name="url" class="form-control" placeholder="https://youtube.com/watch?v=..." style="margin-top: 0.3rem;">
+                    </div>
+                    <div style="grid-column: 1 / -1; display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                        <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+                            <svg style="width:16px;height:16px;margin-right:0.3rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                            Add Resource
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Resource List -->
+            {% if items %}
+            {% for r in items %}
+            <div class="resource-item">
+                <div class="resource-icon" style="background: {% if r.resource_type == 'pdf' %}#fff5f5{% elif r.resource_type == 'video' %}#faf5ff{% elif r.resource_type == 'ppt' %}#ebf8ff{% elif r.resource_type == 'doc' %}#f0fff4{% else %}#edf2f7{% endif %};">
+                    {% if r.resource_type == 'video' %}
+                    <svg style="color:{% if r.resource_type == 'video' %}#805ad5{% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                    {% else %}
+                    <svg style="color:{% if r.resource_type == 'pdf' %}#e53e3e{% elif r.resource_type == 'ppt' %}#3182ce{% elif r.resource_type == 'doc' %}#38a169{% else %}#718096{% endif %};" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                    {% endif %}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                        <span class="type-badge type-{{ r.resource_type }}">{{ r.resource_type }}</span>
+                        {% if not r.is_published %}<span style="color: #a0aec0; font-size: 0.75rem;">Hidden</span>{% endif %}
+                    </div>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: #1a365d;">{{ r.title }}</div>
+                    {% if r.description %}<div style="font-size: 0.85rem; color: #718096; margin-top: 0.15rem;">{{ r.description }}</div>{% endif %}
+                    <div style="font-size: 0.78rem; color: #a0aec0; margin-top: 0.3rem;">Added {{ r.created_at[:10] if r.created_at else '' }}</div>
+                </div>
+                <div class="resource-actions">
+                    {% if r.file_path %}
+                    <a href="{{ url_for('download_file', filename='materials/' + r.file_path) }}" title="Download">
+                        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </a>
+                    {% endif %}
+                    {% if r.url %}
+                    <a href="{{ r.url|safe_url }}" target="_blank" title="Open URL">
+                        <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                    </a>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('manage_resources') }}" style="display:inline;">
+                        <input type="hidden" name="action" value="toggle">
+                        <input type="hidden" name="id" value="{{ r.id }}">
+                        <button type="submit" title="{% if r.is_published %}Hide from students{% else %}Show to students{% endif %}">
+                            {% if r.is_published %}
+                            <svg style="width:16px;height:16px;color:#38a169;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            {% else %}
+                            <svg style="width:16px;height:16px;color:#a0aec0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                            {% endif %}
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('manage_resources') }}" style="display:inline;" onsubmit="return confirm('Delete this resource?');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="{{ r.id }}">
+                        <button type="submit" class="delete-btn" title="Delete">
+                            <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div style="text-align: center; padding: 3rem; color: #a0aec0; background: white; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <svg style="width:48px;height:48px;margin-bottom:0.75rem;opacity:0.3;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                <p style="font-size: 1rem; font-weight: 600;">No resources uploaded yet</p>
+                <p style="font-size: 0.85rem;">Upload PDFs, lecture videos, notes, and assignments for your students</p>
+            </div>
+            {% endif %}
+
+        </main>
+    </div>
+
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('mobile-open');
+        document.getElementById('sidebarOverlay').classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

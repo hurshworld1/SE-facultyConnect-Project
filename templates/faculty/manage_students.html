@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Students - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar"><div class="container"><a href="{{ url_for('faculty_dashboard') }}" class="navbar-brand">FacultyConnect</a><ul class="navbar-nav"><li><a href="{{ url_for('logout') }}">Logout</a></li></ul></div></nav>
+    <div class="dashboard-layout">
+        {% set active_page = 'students' %}
+        {% include 'faculty/_sidebar.html' %}
+        <main class="dashboard-content">
+            <h1 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Manage Research Students</h1>
+            <p style="color: #718096; font-size: 0.9rem; margin-bottom: 1.5rem;">Add your current and past research students.</p>
+            {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}{% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}{% endif %}{% endwith %}
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Student</h3>
+                <form method="POST" action="{{ url_for('manage_students') }}">
+                    <input type="hidden" name="action" value="add">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Student Name</label>
+                            <input type="text" id="name" name="name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="program">Program</label>
+                            <select id="program" name="program" class="form-control">
+                                <option value="Ph.D.">Ph.D.</option>
+                                <option value="M.Tech">M.Tech</option>
+                                <option value="M.S.">M.S.</option>
+                                <option value="B.Tech">B.Tech</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="research_topic">Research Topic</label>
+                            <input type="text" id="research_topic" name="research_topic" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status" name="status" class="form-control">
+                                <option value="ongoing">Ongoing</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="start_year">Start Year</label>
+                            <input type="text" id="start_year" name="start_year" class="form-control" placeholder="e.g. 2022">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Student</button>
+                </form>
+            </div>
+
+            {% if items %}
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>Name</th><th>Program</th><th>Topic</th><th>Status</th><th>Year</th><th>Actions</th></tr></thead>
+                    <tbody>
+                    {% for s in items %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ s.name }}</td>
+                        <td>{{ s.program }}</td>
+                        <td>{{ s.research_topic }}</td>
+                        <td><span class="status-{{ s.status }}">{{ s.status|capitalize }}</span></td>
+                        <td>{{ s.start_year }}</td>
+                        <td class="table-actions">
+                            <span class="status-{{ 'active' if s.is_published else 'inactive' }}">{{ 'V' if s.is_published else 'H' }}</span>
+                            <form method="POST" style="display: inline;"><input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ s.id }}"><button type="submit" class="btn btn-sm btn-outline">{{ 'Hide' if s.is_published else 'Show' }}</button></form>
+                            <form method="POST" style="display: inline;" onsubmit="return confirm('Delete?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ s.id }}"><button type="submit" class="btn btn-sm btn-danger">Delete</button></form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state"><h3>No students added yet</h3></div>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Toggle -->
+    <button class="mobile-sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <script>
+    function toggleSidebar() {
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebarOverlay');
+        sidebar.classList.toggle('mobile-open');
+        overlay.classList.toggle('active');
+    }
+    </script>
+</body>
+</html>

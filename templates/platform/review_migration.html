@@ -1,0 +1,51 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'data' %}
+{% block title %}Review Migration{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="{{ url_for('platform_data_migration', tab='migrations') }}" style="color: #2563eb; font-size: 0.85rem; text-decoration: none;">← Back to Migrations</a>
+    <h1 style="margin-top: 0.5rem;">Review Migration Request</h1>
+    <p>Review the migration request from {{ migration.full_name }}.</p>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header"><h3>Request Details</h3></div>
+    <div class="card-body" style="padding: 0.5rem 1.25rem;">
+        <div class="detail-row"><span class="label">Faculty</span><span class="value" style="font-weight: 600;">{{ migration.full_name }}</span></div>
+        <div class="detail-row"><span class="label">Email</span><span class="value">{{ migration.email }}</span></div>
+        <div class="detail-row"><span class="label">Username</span><span class="value">{{ migration.username }}</span></div>
+        <div class="detail-row"><span class="label">Requested</span><span class="value">{{ migration.created_at[:16] if migration.created_at else 'N/A' }}</span></div>
+        <div class="detail-row"><span class="label">Reason</span><span class="value">{{ migration.reason or 'Not provided' }}</span></div>
+        <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge badge-warning">{{ migration.status }}</span></span></div>
+        <div class="detail-row"><span class="label">Target Email</span><span class="value" style="font-weight: 600;">{{ migration.target_email or 'Not provided' }}</span></div>
+        <div class="detail-row"><span class="label">Hosting Provider</span><span class="value">{{ migration.hosting_provider or 'Not specified' }}</span></div>
+        <div class="detail-row"><span class="label">Custom Domain</span><span class="value">{{ migration.custom_domain or 'Not specified' }}</span></div>
+    </div>
+</div>
+
+<div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #92400e;">
+    <strong>Security:</strong> Enter your admin password to approve or reject. This action will be logged.
+</div>
+
+<div class="card">
+    <div class="card-header"><h3>Decision</h3></div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('platform_review_migration', req_id=migration.id) }}">
+            <div class="form-group" style="max-width: 400px;">
+                <label>Your Admin Password (required)</label>
+                <input type="password" name="admin_password" class="form-control" required placeholder="Enter your admin password">
+            </div>
+            <div class="form-group" style="max-width: 500px;">
+                <label>Admin Notes (optional)</label>
+                <textarea name="admin_notes" class="form-control" rows="3" placeholder="Notes about this decision..."></textarea>
+            </div>
+            <div style="display: flex; gap: 0.75rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f0f1f3;">
+                <button type="submit" name="decision" value="approve" class="btn btn-success" onclick="return confirm('APPROVE this migration? This will disconnect their data from the platform.')">Approve Migration</button>
+                <button type="submit" name="decision" value="reject" class="btn btn-danger" onclick="return confirm('REJECT this migration request?')">Reject Request</button>
+                <a href="{{ url_for('platform_data_migration', tab='migrations') }}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

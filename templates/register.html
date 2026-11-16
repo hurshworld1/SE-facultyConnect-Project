@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - FacultyConnect</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-card" style="max-width: 480px;">
+            <div style="text-align: center; margin-bottom: 0.5rem;">
+                <svg style="width: 40px; height: 40px; color: var(--primary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                    <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                </svg>
+            </div>
+            <h1>Create Account</h1>
+            <p class="subtitle">Register as a faculty member on FacultyConnect</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}">
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" class="form-control" placeholder="e.g. Dr. Sharma" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="your.name@university.edu" required>
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" pattern="[a-z0-9_]+" minlength="3" required>
+                    <small style="color: var(--gray-500); font-size: 0.8rem;">Lowercase letters, numbers, and underscores only.</small>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="At least 6 characters" minlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Re-enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;">Create Account</button>
+            </form>
+
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.875rem; color: var(--gray-500);">
+                Already have an account? <a href="{{ url_for('login') }}" style="font-weight: 600;">Sign in</a>
+            </p>
+            <p style="text-align: center; margin-top: 0.75rem;">
+                <a href="{{ url_for('index') }}" style="font-size: 0.8rem; color: var(--gray-400);">
+                    <svg style="width:14px;height:14px;vertical-align:middle;margin-right:2px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to homepage
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

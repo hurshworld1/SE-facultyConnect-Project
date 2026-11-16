@@ -1,0 +1,250 @@
+{% extends "platform/base_admin.html" %}
+{% set active_page = 'faculty' %}
+{% block title %}{{ faculty.full_name }} - Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1rem;">
+    <a href="{{ url_for('platform_faculty_list') }}" style="color: #2563eb; font-size: 0.85rem; text-decoration: none;">← Back to Faculty Operations</a>
+</div>
+
+<!-- Profile Hero -->
+<div class="admin-profile-hero">
+    {% if faculty.photo %}
+    <img src="{{ url_for('uploaded_file', filename='photos/' + faculty.photo) }}" alt="{{ faculty.full_name }}">
+    {% else %}
+    <div class="avatar">{{ faculty.full_name[0] }}</div>
+    {% endif %}
+    <div style="flex: 1;">
+        <h1>{{ faculty.full_name }}</h1>
+        <div class="meta">{{ faculty.designation or 'Faculty Member' }}{% if faculty.department %} · {{ faculty.department }}{% endif %}{% if faculty.institution %}<br>{{ faculty.institution }}{% endif %}</div>
+        <div class="badges">
+            <span class="badge badge-{{ 'success' if faculty.is_active else 'danger' }}">{{ 'Active' if faculty.is_active else 'Inactive' }}</span>
+            {% if faculty.is_detached %}<span class="badge badge-purple">Detached</span>{% else %}<span class="badge badge-neutral">Connected</span>{% endif %}
+            <span class="badge badge-neutral">Joined {{ faculty.created_at[:10] if faculty.created_at else 'N/A' }}</span>
+        </div>
+        <div class="actions">
+            <form method="POST" action="{{ url_for('platform_toggle_faculty', fid=faculty.id) }}" style="display:inline;" onsubmit="return confirm('Toggle {{ faculty.full_name }}?')">
+                <button type="submit" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">{{ 'Deactivate' if faculty.is_active else 'Activate' }}</button>
+            </form>
+            <a href="{{ url_for('platform_reset_password', fid=faculty.id) }}" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">Reset Password</a>
+            <a href="{{ url_for('public_profile', username=faculty.username) }}" target="_blank" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">Public Site ↗</a>
+            {% if not faculty.is_detached %}
+            <form method="POST" action="{{ url_for('platform_support_session', fid=faculty.id) }}" style="display:inline;" onsubmit="var r=prompt('Reason for support session:'); if(!r){return false;} this.querySelector('[name=reason]').value=r;">
+                <input type="hidden" name="reason" value="Admin support">
+                <button type="submit" class="btn btn-sm" style="background: rgba(96,165,250,0.2); color: #93c5fd; border: 1px solid rgba(96,165,250,0.3);">View as Faculty</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tab-nav">
+    <a href="#" class="active" onclick="showTab('profile'); return false;">Profile</a>
+    <a href="#" onclick="showTab('qualifications'); return false;">Qualifications ({{ qualifications|length }})</a>
+    <a href="#" onclick="showTab('publications'); return false;">Publications ({{ publications|length }})</a>
+    <a href="#" onclick="showTab('courses'); return false;">Courses ({{ courses|length }})</a>
+    <a href="#" onclick="showTab('achievements'); return false;">Achievements ({{ achievements|length }})</a>
+    <a href="#" onclick="showTab('research'); return false;">Research ({{ research|length }})</a>
+    <a href="#" onclick="showTab('students'); return false;">Students ({{ students|length }})</a>
+    <a href="#" onclick="showTab('projects'); return false;">Projects ({{ projects|length }})</a>
+    <a href="#" onclick="showTab('messages'); return false;">Messages ({{ messages|length }})</a>
+    <a href="#" onclick="showTab('activity'); return false;">Activity</a>
+</div>
+
+<!-- Profile Tab -->
+<div id="tab-profile" class="tab-panel active">
+    <div class="card">
+        <div class="card-header"><h3>Personal Information</h3></div>
+        <div class="card-body" style="padding: 0.5rem 1.25rem;">
+            <div class="detail-row"><span class="label">Full Name</span><span class="value">{{ faculty.full_name }}</span></div>
+            <div class="detail-row"><span class="label">Email</span><span class="value">{{ faculty.email }}</span></div>
+            <div class="detail-row"><span class="label">Username</span><span class="value">{{ faculty.username }}</span></div>
+            <div class="detail-row"><span class="label">Designation</span><span class="value">{{ faculty.designation or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Department</span><span class="value">{{ faculty.department or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Institution</span><span class="value">{{ faculty.institution or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Phone</span><span class="value">{{ faculty.phone or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Office</span><span class="value">{{ faculty.office_location or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Bio</span><span class="value">{{ faculty.bio or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Research</span><span class="value">{{ faculty.research_summary or '-' }}</span></div>
+            <div class="detail-row"><span class="label">Scholar</span><span class="value">{{ faculty.google_scholar or '-' }}</span></div>
+            <div class="detail-row"><span class="label">LinkedIn</span><span class="value">{{ faculty.linkedin or '-' }}</span></div>
+            <div class="detail-row"><span class="label">GitHub</span><span class="value">{{ faculty.github or '-' }}</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Qualifications Tab -->
+<div id="tab-qualifications" class="tab-panel">
+    {% if qualifications %}
+    {% for q in qualifications %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div><h4 style="font-size: 0.95rem;">{{ q.degree }}</h4>{% if q.specialization %}<p style="font-size: 0.85rem; color: #2563eb;">{{ q.specialization }}</p>{% endif %}<p style="font-size: 0.85rem; color: #6b7280;">{{ q.university }} {% if q.year_of_passing %}· {{ q.year_of_passing }}{% endif %}</p></div>
+                <span class="badge badge-{{ 'success' if q.is_published else 'neutral' }}">{{ 'Published' if q.is_published else 'Draft' }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No qualifications.</p></div>{% endif %}
+</div>
+
+<!-- Publications Tab -->
+<div id="tab-publications" class="tab-panel">
+    {% if publications %}
+    {% for p in publications %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <h4 style="font-size: 0.95rem;">{{ p.title }}</h4>
+            <p style="font-size: 0.82rem; color: #6b7280;">{{ p.authors }}</p>
+            <p style="font-size: 0.82rem; color: #4b5563; font-style: italic;">{{ p.journal }} {% if p.year %}({{ p.year }}){% endif %}</p>
+            {% if p.doi %}<p style="font-size: 0.8rem; color: #2563eb;">DOI: {{ p.doi }}</p>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No publications.</p></div>{% endif %}
+</div>
+
+<!-- Courses Tab -->
+<div id="tab-courses" class="tab-panel">
+    {% if courses %}
+    {% for c in courses %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between;">
+                <div><h4 style="font-size: 0.95rem;">{{ c.name }} {% if c.code %}<span style="font-weight: 400; color: #6b7280; font-size: 0.8rem;">({{ c.code }})</span>{% endif %}</h4><p style="font-size: 0.82rem; color: #6b7280;">{{ c.semester }} {% if c.schedule %}· {{ c.schedule }}{% endif %}</p></div>
+                <span class="badge badge-{{ 'success' if c.is_published else 'neutral' }}">{{ 'Published' if c.is_published else 'Draft' }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No courses.</p></div>{% endif %}
+</div>
+
+<!-- Achievements Tab -->
+<div id="tab-achievements" class="tab-panel">
+    {% if achievements %}
+    {% for a in achievements %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <h4 style="font-size: 0.95rem;">{{ a.title }}</h4>
+            {% if a.description %}<p style="font-size: 0.85rem; color: #4b5563;">{{ a.description }}</p>{% endif %}
+            <p style="font-size: 0.82rem; color: #6b7280;">{{ a.category|title }} {% if a.year %}· {{ a.year }}{% endif %}</p>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No achievements.</p></div>{% endif %}
+</div>
+
+<!-- Research Tab -->
+<div id="tab-research" class="tab-panel">
+    {% if research %}
+    {% for r in research %}
+    <div class="card" style="margin-bottom: 0.75rem; border-left: 3px solid #2563eb;">
+        <div class="card-body">
+            <h4 style="font-size: 0.95rem;">{{ r.title }}</h4>
+            {% if r.description %}<p style="font-size: 0.85rem; color: #4b5563;">{{ r.description }}</p>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No research interests.</p></div>{% endif %}
+</div>
+
+<!-- Students Tab -->
+<div id="tab-students" class="tab-panel">
+    {% if students %}
+    {% for s in students %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between;">
+                <div><h4 style="font-size: 0.95rem;">{{ s.name }}</h4><p style="font-size: 0.82rem; color: #6b7280;">{{ s.program }} {% if s.research_topic %}· {{ s.research_topic }}{% endif %}</p></div>
+                <span class="badge badge-{{ 'success' if s.status == 'ongoing' else 'neutral' }}">{{ s.status }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No students.</p></div>{% endif %}
+</div>
+
+<!-- Projects Tab -->
+<div id="tab-projects" class="tab-panel">
+    {% if projects %}
+    {% for p in projects %}
+    <div class="card" style="margin-bottom: 0.75rem;">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between;">
+                <div><h4 style="font-size: 0.95rem;">{{ p.title }}</h4>{% if p.description %}<p style="font-size: 0.82rem; color: #4b5563;">{{ p.description[:200] }}</p>{% endif %}</div>
+                <span class="badge badge-{{ 'success' if p.status == 'ongoing' else 'neutral' }}">{{ p.status }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No projects.</p></div>{% endif %}
+</div>
+
+<!-- Messages Tab -->
+<div id="tab-messages" class="tab-panel">
+    {% if messages %}
+    {% for m in messages %}
+    <div class="card" style="margin-bottom: 0.75rem; {% if not m.is_read %}border-left: 3px solid #2563eb;{% endif %}">
+        <div class="card-body">
+            <div style="display: flex; justify-content: space-between;">
+                <div><h4 style="font-size: 0.95rem;">{{ m.subject or '(no subject)' }}</h4><p style="font-size: 0.85rem; color: #111827;">{{ m.message }}</p><p style="font-size: 0.82rem; color: #6b7280; margin-top: 0.5rem;">From: {{ m.sender_name }} ({{ m.sender_email }}) · {{ m.created_at[:16] }}</p></div>
+                <span class="badge badge-{{ 'info' if not m.is_read else 'neutral' }}">{{ 'Unread' if m.is_read else 'Read' }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}<div class="empty-state"><p>No messages.</p></div>{% endif %}
+</div>
+
+<!-- Activity Tab -->
+<div id="tab-activity" class="tab-panel">
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Action</th><th>Details</th><th>Time</th><th>IP</th></tr></thead>
+                <tbody>
+                    {% for a in activity %}
+                    <tr>
+                        <td style="font-weight: 600; font-size: 0.82rem;">{{ a.action }}</td>
+                        <td style="font-size: 0.82rem; color: #6b7280;">{{ a.details or '-' }}</td>
+                        <td style="font-size: 0.78rem; color: #9ca3af;">{{ a.timestamp[:16] if a.timestamp else '' }}</td>
+                        <td style="font-size: 0.78rem; color: #9ca3af;">{{ a.ip_address }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not activity %}
+                    <tr><td colspan="4"><div class="empty-state"><p>No activity.</p></div></td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Migration Info -->
+{% if migration %}
+<div class="card" style="margin-top: 1.5rem; border-left: 4px solid {% if migration.status == 'approved' %}#059669{% elif migration.status == 'rejected' %}#dc2626{% else %}#d97706{% endif %};">
+    <div class="card-header"><h3>Migration Request</h3></div>
+    <div class="card-body" style="padding: 0.5rem 1.25rem;">
+        <div class="detail-row"><span class="label">Status</span><span class="value"><span class="badge badge-{{ 'success' if migration.status == 'approved' else 'danger' if migration.status == 'rejected' else 'warning' }}">{{ migration.status }}</span></span></div>
+        {% if migration.target_email %}<div class="detail-row"><span class="label">Target</span><span class="value">{{ migration.target_email }}</span></div>{% endif %}
+        {% if migration.reason %}<div class="detail-row"><span class="label">Reason</span><span class="value">{{ migration.reason }}</span></div>{% endif %}
+        <div class="detail-row"><span class="label">Requested</span><span class="value">{{ migration.created_at[:10] if migration.created_at else 'N/A' }}</span></div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(function(s) { s.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelectorAll('.tab-nav a').forEach(function(a) { a.classList.remove('active'); });
+    event.target.classList.add('active');
+}
+</script>
+{% endblock %}
