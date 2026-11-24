@@ -34,9 +34,17 @@ from flask import (
 # =============================================================================
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fc-dev-key-change-in-production')
-app.config['DATABASE'] = os.environ.get('DATABASE_URL', os.path.join(app.root_path, 'faculty.db'))
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+
+app.config['SECRET_KEY'] = os.environ.get(
+    'SECRET_KEY', 'fc-dev-key-change-in-production'
+)
+
+# Temporary writable storage for Vercel
+DATA_DIR = '/tmp/facultyconnect'
+os.makedirs(DATA_DIR, exist_ok=True)
+
+app.config['DATABASE'] = os.path.join(DATA_DIR, 'faculty.db')
+app.config['UPLOAD_FOLDER'] = os.path.join(DATA_DIR, 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB (for video uploads)
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)
 
