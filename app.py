@@ -2666,7 +2666,26 @@ def platform_settings():
 def platform_logout():
     session.clear()
     return redirect(url_for('platform_login'))
+# =============================================================================
+# Database bootstrap (needed on Vercel, where the __main__ block never runs)
+# =============================================================================
 
+_db_ready = False
+
+@app.before_request
+def ensure_database():
+    """Create tables (and demo data if empty) on the first request."""
+    global _db_ready
+    if _db_ready:
+        return
+    init_db()
+    conn = sqlite3.connect(app.config['DATABASE'], timeout=15)
+    count = conn.execute('SELECT COUNT(*) FROM faculty').fetchone()[0]
+    conn.close()
+    if count == 0:
+        from seed import seed
+        seed()
+    _db_ready = True
 # =============================================================================
 # Error Handlers
 # =============================================================================
